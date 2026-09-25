@@ -1,0 +1,6 @@
+# Run once with --spring.profiles.active=local-init to create the schema on Neon
+# for the first time, then switch back to the default profile (ddl-auto=validate).
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
