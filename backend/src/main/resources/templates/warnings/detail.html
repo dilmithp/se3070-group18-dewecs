@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Warning detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${warning.hazardType} + ' warning — ' + ${warning.districtName}"></h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<dl>
+    <dt>Status</dt>
+    <dd th:text="${warning.status}"></dd>
+
+    <dt>Severity</dt>
+    <dd th:text="${warning.severity}"></dd>
+
+    <dt>Message</dt>
+    <dd th:text="${warning.message} ?: '—'"></dd>
+
+    <dt>Broadcast channels</dt>
+    <dd th:text="${#lists.isEmpty(warning.broadcastChannels)} ? '—' : ${#strings.listJoin(warning.broadcastChannels, ', ')}"></dd>
+
+    <dt>Issued by</dt>
+    <dd th:text="${warning.issuedByName}"></dd>
+
+    <dt>Issued at</dt>
+    <dd th:text="${warning.issuedAt} ?: '—'"></dd>
+
+    <dt>Expires at</dt>
+    <dd th:text="${warning.expiresAt} ?: '—'"></dd>
+</dl>
+
+<div class="actions">
+    <a th:if="${warning.status == 'DRAFT'}" th:href="@{/warnings/{id}/edit(id=${warning.id})}">Edit</a>
+
+    <form th:if="${warning.status == 'DRAFT'}" th:action="@{/warnings/{id}/publish(id=${warning.id})}"
+          method="post" class="inline-form">
+        <button type="submit">Publish</button>
+    </form>
+
+    <form th:if="${warning.status == 'DRAFT' or warning.status == 'ISSUED'}"
+          th:action="@{/warnings/{id}/retract(id=${warning.id})}" method="post" class="inline-form">
+        <button type="submit">Retract</button>
+    </form>
+
+    <a th:href="@{/warnings}">Back to list</a>
+</div>
+</body>
+</html>

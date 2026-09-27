@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Shelter detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${shelter.name} + ' — ' + ${shelter.districtName}"></h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<dl>
+    <dt>Status</dt>
+    <dd th:text="${shelter.status}"></dd>
+
+    <dt>Occupancy</dt>
+    <dd th:text="${shelter.currentOccupancy} + ' / ' + ${shelter.capacity}"></dd>
+
+    <dt>Organization</dt>
+    <dd th:text="${shelter.organizationName}"></dd>
+</dl>
+
+<div class="actions">
+    <a th:href="@{/shelters/{id}/edit(id=${shelter.id})}">Edit</a>
+
+    <form th:if="${shelter.status != 'CLOSED'}" th:action="@{/shelters/{id}/close(id=${shelter.id})}"
+          method="post" class="inline-form">
+        <button type="submit">Close</button>
+    </form>
+
+    <form th:if="${shelter.status == 'CLOSED'}" th:action="@{/shelters/{id}/reopen(id=${shelter.id})}"
+          method="post" class="inline-form">
+        <button type="submit">Reopen</button>
+    </form>
+
+    <a th:href="@{/shelters}">Back to list</a>
+</div>
+
+<h2>Check in a new occupant</h2>
+<form th:action="@{/shelters/{id}/check-in(id=${shelter.id})}" th:object="${checkInForm}" method="post">
+    <label>Full name
+        <input type="text" th:field="*{fullName}"/>
+    </label>
+    <label>NIC
+        <input type="text" th:field="*{nic}"/>
+    </label>
+    <button type="submit">Check in</button>
+</form>
+
+<h2>Current occupants</h2>
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>NIC</th>
+        <th>Checked in</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="o : ${occupants}">
+        <td th:text="${o.fullName}"></td>
+        <td th:text="${o.nic}"></td>
+        <td th:text="${o.checkInTime}"></td>
+        <td>
+            <form th:action="@{/shelters/{id}/check-out/{occupantId}(id=${shelter.id},occupantId=${o.id})}"
+                  method="post" class="inline-form">
+                <button type="submit">Check out</button>
+            </form>
+        </td>
+    </tr>
+    <tr th:if="${occupants.isEmpty()}">
+        <td colspan="4">No occupants currently checked in.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${warningId != null} ? 'Edit warning' : 'New warning'">Warning form</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${warningId != null} ? 'Edit draft warning' : 'New draft warning'"></h1>
+
+<form th:action="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}"
+      th:object="${form}" method="post">
+
+    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+    <label>Hazard event
+        <select th:field="*{hazardEventId}">
+            <option value="">-- select --</option>
+            <option th:each="he : ${hazardEvents}" th:value="${he.id}"
+                    th:text="${he.hazardType} + ' — ' + ${he.district.name} + ' (' + ${he.occurredAt} + ')'"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('hazardEventId')}" th:errors="*{hazardEventId}"></p>
+
+    <label>Issued by
+        <select th:field="*{issuedByUserId}">
+            <option value="">-- select --</option>
+            <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('issuedByUserId')}" th:errors="*{issuedByUserId}"></p>
+
+    <label>Severity
+        <select th:field="*{severity}">
+            <option value="">-- select --</option>
+            <option th:each="sev : ${severities}" th:value="${sev.name()}" th:text="${sev.name()}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('severity')}" th:errors="*{severity}"></p>
+
+    <label>Message
+        <textarea th:field="*{message}" rows="4"></textarea>
+    </label>
+
+    <label>Expires at
+        <input type="datetime-local" th:field="*{expiresAt}"/>
+    </label>
+
+    <fieldset>
+        <legend>Broadcast channels</legend>
+        <label th:each="ch : ${channels}" class="checkbox-label">
+            <input type="checkbox" th:field="*{broadcastChannels}" th:value="${ch.name()}"/>
+            <span th:text="${ch.name()}"></span>
+        </label>
+    </fieldset>
+
+    <button type="submit">Save draft</button>
+    <a th:href="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}">Cancel</a>
+</form>
+</body>
+</html>

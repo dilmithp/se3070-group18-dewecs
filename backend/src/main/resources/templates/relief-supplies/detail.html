@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relief supply detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${supply.name} + ' — ' + ${supply.districtName}"></h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<dl>
+    <dt>Category</dt>
+    <dd th:text="${supply.type}"></dd>
+
+    <dt>Stock</dt>
+    <dd>
+        <span th:text="${supply.quantity} + ' ' + ${supply.unit}"></span>
+        <span th:if="${supply.outOfStock}" class="badge badge-danger">OUT OF STOCK</span>
+        <span th:if="${!supply.outOfStock and supply.lowStock}" class="badge badge-warning">LOW STOCK</span>
+    </dd>
+
+    <dt>Owning organization</dt>
+    <dd th:text="${supply.organizationName}"></dd>
+</dl>
+
+<div class="actions">
+    <a th:href="@{/relief-supplies/{id}/edit(id=${supply.id})}">Edit</a>
+    <a th:href="@{/relief-supplies}">Back to list</a>
+</div>
+
+<h2>Restock</h2>
+<form th:action="@{/relief-supplies/{id}/restock(id=${supply.id})}" th:object="${restockForm}" method="post">
+    <label>Additional quantity
+        <input type="number" min="1" th:field="*{quantity}"/>
+    </label>
+    <button type="submit">Add stock</button>
+</form>
+</body>
+</html>

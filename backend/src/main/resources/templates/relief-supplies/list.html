@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relief Supplies</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>Relief Supplies</h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<form method="get" th:action="@{/relief-supplies}" class="filter-bar">
+    <select name="type">
+        <option value="">All categories</option>
+        <option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.name()}"
+                th:selected="${t.name() == selectedType}"></option>
+    </select>
+    <select name="districtId">
+        <option value="">All regions</option>
+        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                th:selected="${d.id == selectedDistrictId}"></option>
+    </select>
+    <label><input type="checkbox" name="lowStockOnly" value="true" th:checked="${lowStockOnly}"/> Low stock only</label>
+    <button type="submit">Filter</button>
+    <a th:href="@{/relief-supplies/new}" class="button">+ New supply</a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Category</th>
+        <th>Region</th>
+        <th>Stock</th>
+        <th>Organization</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="s : ${supplies}">
+        <td th:text="${s.name}"></td>
+        <td th:text="${s.type}"></td>
+        <td th:text="${s.districtName}"></td>
+        <td>
+            <span th:text="${s.quantity} + ' ' + ${s.unit}"></span>
+            <span th:if="${s.outOfStock}" class="badge badge-danger">OUT OF STOCK</span>
+            <span th:if="${!s.outOfStock and s.lowStock}" class="badge badge-warning">LOW STOCK</span>
+        </td>
+        <td th:text="${s.organizationName}"></td>
+        <td><a th:href="@{/relief-supplies/{id}(id=${s.id})}">View</a></td>
+    </tr>
+    <tr th:if="${supplies.isEmpty()}">
+        <td colspan="6">No relief supplies match this filter.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

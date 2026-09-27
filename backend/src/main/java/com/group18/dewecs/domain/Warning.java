@@ -1,6 +1,7 @@
 package com.group18.dewecs.domain;
 
 import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -43,8 +44,13 @@ public class Warning {
     @Enumerated(EnumType.STRING)
     private Set<BroadcastChannel> broadcastChannels = new HashSet<>();
 
-    @NotNull
+    @Column(length = 2000)
+    private String message;
+
+    /** Null while {@link WarningStatus#DRAFT}; stamped with the actual time at publish. */
     private LocalDateTime issuedAt;
+
+    private LocalDateTime expiresAt;
 
     @NotNull
     @ManyToOne
@@ -91,12 +97,28 @@ public class Warning {
         this.broadcastChannels = broadcastChannels;
     }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
     public LocalDateTime getIssuedAt() {
         return issuedAt;
     }
 
     public void setIssuedAt(LocalDateTime issuedAt) {
         this.issuedAt = issuedAt;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
+        this.expiresAt = expiresAt;
     }
 
     public User getIssuedBy() {

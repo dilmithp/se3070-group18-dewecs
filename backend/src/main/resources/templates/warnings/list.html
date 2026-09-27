@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Warnings</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>Warnings</h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<form method="get" th:action="@{/warnings}" class="filter-bar">
+    <select name="status">
+        <option value="">All statuses</option>
+        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name()}"
+                th:selected="${s.name() == selectedStatus}"></option>
+    </select>
+    <select name="districtId">
+        <option value="">All regions</option>
+        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                th:selected="${d.id == selectedDistrictId}"></option>
+    </select>
+    <button type="submit">Filter</button>
+    <a th:href="@{/warnings/new}" class="button">+ New warning</a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>Hazard</th>
+        <th>Region</th>
+        <th>Severity</th>
+        <th>Status</th>
+        <th>Issued at</th>
+        <th>Expires at</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="w : ${warnings}">
+        <td th:text="${w.hazardType}"></td>
+        <td th:text="${w.districtName}"></td>
+        <td th:text="${w.severity}"></td>
+        <td th:text="${w.status}"></td>
+        <td th:text="${w.issuedAt}"></td>
+        <td th:text="${w.expiresAt}"></td>
+        <td><a th:href="@{/warnings/{id}(id=${w.id})}">View</a></td>
+    </tr>
+    <tr th:if="${warnings.isEmpty()}">
+        <td colspan="7">No warnings match this filter.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

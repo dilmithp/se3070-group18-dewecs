@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ground report detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="'Ground report — ' + ${report.reporterName}"></h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<dl>
+    <dt>Status</dt>
+    <dd th:text="${report.status}"></dd>
+
+    <dt>Category</dt>
+    <dd th:text="${report.category}"></dd>
+
+    <dt>Region</dt>
+    <dd th:text="${report.districtName}"></dd>
+
+    <dt>Reporter phone</dt>
+    <dd th:text="${report.reporterPhone}"></dd>
+
+    <dt>GPS</dt>
+    <dd th:text="${report.gpsLat} + ', ' + ${report.gpsLng}"></dd>
+
+    <dt>Photo</dt>
+    <dd th:text="${report.photoUrl} ?: '—'"></dd>
+
+    <dt>Description</dt>
+    <dd th:text="${report.description}"></dd>
+
+    <dt>Reviewed/actioned by</dt>
+    <dd th:text="${report.verifiedByName} ?: '—'"></dd>
+
+    <dt>Action note</dt>
+    <dd th:text="${report.actionNote} ?: '—'"></dd>
+
+    <dt>Submitted at</dt>
+    <dd th:text="${report.submittedAt}"></dd>
+</dl>
+
+<div class="actions" th:if="${report.status == 'PENDING_REVIEW' or report.status == 'VERIFIED'}">
+    <h2>Review</h2>
+    <form method="post">
+        <label>Reviewing officer
+            <select name="reviewingUserId">
+                <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+            </select>
+        </label>
+
+        <label th:if="${report.status == 'VERIFIED'}">Action note
+            <textarea name="note" rows="3"></textarea>
+        </label>
+
+        <button th:if="${report.status == 'PENDING_REVIEW'}" type="submit"
+                th:formaction="@{/ground-reports/{id}/review(id=${report.id})}">Mark reviewed</button>
+        <button th:if="${report.status == 'VERIFIED'}" type="submit"
+                th:formaction="@{/ground-reports/{id}/action(id=${report.id})}">Action</button>
+        <button type="submit" th:formaction="@{/ground-reports/{id}/dismiss(id=${report.id})}">Dismiss</button>
+    </form>
+</div>
+
+<a th:href="@{/ground-reports}">Back to list</a>
+</body>
+</html>

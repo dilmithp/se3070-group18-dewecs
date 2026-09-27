@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Shelters</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>Shelters</h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<form method="get" th:action="@{/shelters}" class="filter-bar">
+    <select name="status">
+        <option value="">All statuses</option>
+        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name()}"
+                th:selected="${s.name() == selectedStatus}"></option>
+    </select>
+    <select name="districtId">
+        <option value="">All regions</option>
+        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                th:selected="${d.id == selectedDistrictId}"></option>
+    </select>
+    <button type="submit">Filter</button>
+    <a th:href="@{/shelters/new}" class="button">+ New shelter</a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Region</th>
+        <th>Occupancy</th>
+        <th>Status</th>
+        <th>Organization</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="s : ${shelters}">
+        <td th:text="${s.name}"></td>
+        <td th:text="${s.districtName}"></td>
+        <td th:text="${s.currentOccupancy} + ' / ' + ${s.capacity}"></td>
+        <td th:text="${s.status}"></td>
+        <td th:text="${s.organizationName}"></td>
+        <td><a th:href="@{/shelters/{id}(id=${s.id})}">View</a></td>
+    </tr>
+    <tr th:if="${shelters.isEmpty()}">
+        <td colspan="6">No shelters match this filter.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

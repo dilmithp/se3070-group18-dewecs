@@ -1,0 +1,139 @@
+body {
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    padding: 0 2rem 2rem;
+    color: #1a1a1a;
+}
+
+.navbar {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 1.5rem;
+}
+
+.navbar .brand {
+    font-weight: bold;
+    text-decoration: none;
+    color: #1a1a1a;
+}
+
+.navbar a {
+    color: #1a1a1a;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #eee;
+}
+
+form label {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+form select, form textarea, form input {
+    display: block;
+    margin-top: 0.25rem;
+    width: 100%;
+    max-width: 480px;
+}
+
+.checkbox-label {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.35rem;
+    margin-right: 1rem;
+    width: auto;
+}
+
+.inline-form {
+    display: inline;
+}
+
+.actions > * {
+    margin-right: 0.75rem;
+}
+
+.flash {
+    background: #e6f4ea;
+    color: #1e4620;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.flash-error, .field-error, .form-errors {
+    background: #fdecea;
+    color: #611a15;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+}
+
+.badge-warning {
+    background: #fff3cd;
+    color: #7a5c00;
+}
+
+.badge-danger {
+    background: #fdecea;
+    color: #611a15;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    max-width: 900px;
+}
+
+.stat-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1.25rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #1a1a1a;
+    background: #fafafa;
+}
+
+.stat-tile:hover {
+    background: #f0f0f0;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #555;
+}

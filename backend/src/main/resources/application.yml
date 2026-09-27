@@ -3,9 +3,9 @@ spring:
     name: dewecs
 
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: postgresql://ep-shy-firefly-b4tftv64-pooler.c-6.us-east-2.aws.neon.tech/prod?sslmode=require
+    username: neondb_owner
+    password: npg_S7ihUD4brJYK
     driver-class-name: org.postgresql.Driver
 
   jpa:

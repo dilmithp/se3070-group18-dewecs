@@ -28,6 +28,15 @@ public class GroundReport {
     @JoinColumn(name = "reported_by_citizen_id")
     private Citizen reportedBy;
 
+    @NotNull
+    @ManyToOne
+    @JoinColumn(name = "district_id")
+    private District district;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private HazardType category;
+
     private String photoUrl;
 
     @NotNull
@@ -47,6 +56,9 @@ public class GroundReport {
     @JoinColumn(name = "verified_by_user_id")
     private User verifiedBy;
 
+    @Column(length = 2000)
+    private String actionNote;
+
     @NotNull
     private LocalDateTime submittedAt;
 
@@ -64,6 +76,22 @@ public class GroundReport {
 
     public void setReportedBy(Citizen reportedBy) {
         this.reportedBy = reportedBy;
+    }
+
+    public District getDistrict() {
+        return district;
+    }
+
+    public void setDistrict(District district) {
+        this.district = district;
+    }
+
+    public HazardType getCategory() {
+        return category;
+    }
+
+    public void setCategory(HazardType category) {
+        this.category = category;
     }
 
     public String getPhotoUrl() {
@@ -112,6 +140,14 @@ public class GroundReport {
 
     public void setVerifiedBy(User verifiedBy) {
         this.verifiedBy = verifiedBy;
+    }
+
+    public String getActionNote() {
+        return actionNote;
+    }
+
+    public void setActionNote(String actionNote) {
+        this.actionNote = actionNote;
     }
 
     public LocalDateTime getSubmittedAt() {

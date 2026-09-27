@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New relief distribution</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>New relief distribution</h1>
+
+<form th:action="@{/relief-distributions}" th:object="${form}" method="post">
+
+    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+    <label>Relief supply
+        <select th:field="*{resourceId}">
+            <option value="">-- select --</option>
+            <option th:each="r : ${supplies}" th:value="${r.id}"
+                    th:text="${r.name} + ' (' + ${r.quantity} + ' ' + ${r.unit} + ' available)'"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('resourceId')}" th:errors="*{resourceId}"></p>
+
+    <label>Destination shelter
+        <select th:field="*{shelterId}">
+            <option value="">-- select --</option>
+            <option th:each="sh : ${shelters}" th:value="${sh.id}" th:text="${sh.name}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('shelterId')}" th:errors="*{shelterId}"></p>
+
+    <label>Quantity
+        <input type="number" min="1" th:field="*{quantity}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+
+    <button type="submit">Dispatch</button>
+    <a th:href="@{/relief-distributions}">Cancel</a>
+</form>
+</body>
+</html>

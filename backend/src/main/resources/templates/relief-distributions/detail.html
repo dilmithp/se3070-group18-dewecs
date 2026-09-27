@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relief distribution detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${distribution.resourceName} + ' → ' + ${distribution.shelterName}"></h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<dl>
+    <dt>Status</dt>
+    <dd th:text="${distribution.status}"></dd>
+
+    <dt>Quantity</dt>
+    <dd th:text="${distribution.quantity} + ' ' + ${distribution.resourceUnit}"></dd>
+
+    <dt>Source organization</dt>
+    <dd th:text="${distribution.organizationName}"></dd>
+
+    <dt>Dispatched at</dt>
+    <dd th:text="${distribution.dispatchedAt}"></dd>
+
+    <dt>Delivered at</dt>
+    <dd th:text="${distribution.deliveredAt} ?: '—'"></dd>
+</dl>
+
+<div class="actions">
+    <form th:if="${distribution.status == 'DISPATCHED'}"
+          th:action="@{/relief-distributions/{id}/deliver(id=${distribution.id})}" method="post" class="inline-form">
+        <button type="submit">Mark delivered</button>
+    </form>
+
+    <form th:if="${distribution.status == 'DISPATCHED'}"
+          th:action="@{/relief-distributions/{id}/cancel(id=${distribution.id})}" method="post" class="inline-form">
+        <button type="submit">Cancel</button>
+    </form>
+
+    <a th:href="@{/relief-distributions}">Back to list</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>Dashboard</h1>
+
+<div class="stat-grid">
+    <a href="/warnings?status=ISSUED" class="stat-tile">
+        <span class="stat-value" th:text="${summary.openWarnings}"></span>
+        <span class="stat-label">Open Warnings</span>
+    </a>
+    <a href="/shelters?status=FULL" class="stat-tile">
+        <span class="stat-value" th:text="${summary.fullShelters}"></span>
+        <span class="stat-label">Full Shelters</span>
+    </a>
+    <a href="/rescue-requests?status=PENDING" class="stat-tile">
+        <span class="stat-value" th:text="${summary.pendingRescueRequests}"></span>
+        <span class="stat-label">Pending Rescue Requests</span>
+    </a>
+    <a href="/relief-supplies?lowStockOnly=true" class="stat-tile">
+        <span class="stat-value" th:text="${summary.lowStockSupplies}"></span>
+        <span class="stat-label">Low-Stock Supplies</span>
+    </a>
+    <a href="/ground-reports?status=PENDING_REVIEW" class="stat-tile">
+        <span class="stat-value" th:text="${summary.unreviewedReports}"></span>
+        <span class="stat-label">Unreviewed Reports</span>
+    </a>
+</div>
+</body>
+</html>

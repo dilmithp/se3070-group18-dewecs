@@ -32,10 +32,21 @@ public class Resource {
     @PositiveOrZero
     private Integer quantity;
 
+    @NotBlank
+    private String unit;
+
+    @NotNull
+    @ManyToOne
+    @JoinColumn(name = "district_id")
+    private District district;
+
     @NotNull
     @ManyToOne
     @JoinColumn(name = "organization_id")
     private Organization organization;
+
+    /** Below this, a supply shows as low-stock in the dashboard (zero means out-of-stock). */
+    public static final int LOW_STOCK_THRESHOLD = 10;
 
     public Long getId() {
         return id;
@@ -67,6 +78,22 @@ public class Resource {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public District getDistrict() {
+        return district;
+    }
+
+    public void setDistrict(District district) {
+        this.district = district;
     }
 
     public Organization getOrganization() {

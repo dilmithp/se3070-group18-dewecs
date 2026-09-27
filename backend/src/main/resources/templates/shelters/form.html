@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${shelterId != null} ? 'Edit shelter' : 'New shelter'">Shelter form</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${shelterId != null} ? 'Edit shelter' : 'New shelter'"></h1>
+
+<form th:action="${shelterId != null} ? @{/shelters/{id}(id=${shelterId})} : @{/shelters}"
+      th:object="${form}" method="post">
+
+    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+    <label>District
+        <small th:if="${shelterId != null}">(changing this here has no effect — district is fixed after creation)</small>
+        <select th:field="*{districtId}">
+            <option value="">-- select --</option>
+            <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+
+    <label>Owning organization
+        <small th:if="${shelterId != null}">(changing this here has no effect — organization is fixed after creation)</small>
+        <select th:field="*{organizationId}">
+            <option value="">-- select --</option>
+            <option th:each="o : ${organizations}" th:value="${o.id}" th:text="${o.name}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('organizationId')}" th:errors="*{organizationId}"></p>
+
+    <label>Name
+        <input type="text" th:field="*{name}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+
+    <label>Capacity
+        <input type="number" min="1" th:field="*{capacity}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('capacity')}" th:errors="*{capacity}"></p>
+
+    <button type="submit" th:text="${shelterId != null} ? 'Save changes' : 'Create shelter'"></button>
+    <a th:href="${shelterId != null} ? @{/shelters/{id}(id=${shelterId})} : @{/shelters}">Cancel</a>
+</form>
+</body>
+</html>

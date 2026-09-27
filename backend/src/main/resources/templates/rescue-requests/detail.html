@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rescue request detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="'Rescue request — ' + ${request.requesterName}"></h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<dl>
+    <dt>Status</dt>
+    <dd th:text="${request.status}"></dd>
+
+    <dt>Priority</dt>
+    <dd th:text="${request.priority}"></dd>
+
+    <dt>Region</dt>
+    <dd th:text="${request.districtName}"></dd>
+
+    <dt>Requester phone</dt>
+    <dd th:text="${request.requesterPhone}"></dd>
+
+    <dt>GPS</dt>
+    <dd th:text="(${request.gpsLat} != null and ${request.gpsLng} != null) ? (${request.gpsLat} + ', ' + ${request.gpsLng}) : '—'"></dd>
+
+    <dt>Description</dt>
+    <dd th:text="${request.description}"></dd>
+
+    <dt>Assigned team</dt>
+    <dd th:text="${request.assignedTeamName} ?: '—'"></dd>
+
+    <dt>Submitted at</dt>
+    <dd th:text="${request.submittedAt}"></dd>
+
+    <dt>Assigned at</dt>
+    <dd th:text="${request.assignedAt} ?: '—'"></dd>
+
+    <dt>Completed at</dt>
+    <dd th:text="${request.completedAt} ?: '—'"></dd>
+</dl>
+
+<div class="actions">
+    <form th:if="${request.status == 'PENDING'}" th:action="@{/rescue-requests/{id}/assign(id=${request.id})}"
+          method="post" class="inline-form">
+        <label>Team
+            <select name="teamId">
+                <option th:each="t : ${availableTeams}" th:value="${t.id}" th:text="${t.name}"></option>
+            </select>
+        </label>
+        <button type="submit">Assign</button>
+    </form>
+
+    <form th:if="${request.status == 'ASSIGNED'}" th:action="@{/rescue-requests/{id}/complete(id=${request.id})}"
+          method="post" class="inline-form">
+        <button type="submit">Complete</button>
+    </form>
+
+    <form th:if="${request.status == 'PENDING' or request.status == 'ASSIGNED'}"
+          th:action="@{/rescue-requests/{id}/cancel(id=${request.id})}" method="post" class="inline-form">
+        <button type="submit">Cancel</button>
+    </form>
+
+    <a th:href="@{/rescue-requests}">Back to list</a>
+</div>
+</body>
+</html>

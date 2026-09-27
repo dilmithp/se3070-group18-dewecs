@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New rescue request</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>New rescue request</h1>
+
+<form th:action="@{/rescue-requests}" th:object="${form}" method="post">
+
+    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+    <label>District
+        <select th:field="*{districtId}">
+            <option value="">-- select --</option>
+            <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+
+    <label>Requester name
+        <input type="text" th:field="*{requesterName}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('requesterName')}" th:errors="*{requesterName}"></p>
+
+    <label>Requester phone
+        <input type="text" th:field="*{requesterPhone}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('requesterPhone')}" th:errors="*{requesterPhone}"></p>
+
+    <label>GPS latitude (optional)
+        <input type="number" step="any" th:field="*{gpsLat}"/>
+    </label>
+
+    <label>GPS longitude (optional)
+        <input type="number" step="any" th:field="*{gpsLng}"/>
+    </label>
+
+    <label>Description
+        <textarea th:field="*{description}" rows="4"></textarea>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+
+    <label>Priority
+        <select th:field="*{priority}">
+            <option value="">-- select --</option>
+            <option th:each="p : ${priorities}" th:value="${p.name()}" th:text="${p.name()}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}"></p>
+
+    <button type="submit">Submit request</button>
+    <a th:href="@{/rescue-requests}">Cancel</a>
+</form>
+</body>
+</html>

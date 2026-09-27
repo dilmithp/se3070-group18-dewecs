@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Relief Distributions</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1>Relief Distributions</h1>
+
+<p th:if="${message}" class="flash" th:text="${message}"></p>
+<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+
+<form method="get" th:action="@{/relief-distributions}" class="filter-bar">
+    <select name="status">
+        <option value="">All statuses</option>
+        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name()}"
+                th:selected="${s.name() == selectedStatus}"></option>
+    </select>
+    <select name="shelterId">
+        <option value="">All shelters</option>
+        <option th:each="sh : ${shelters}" th:value="${sh.id}" th:text="${sh.name}"
+                th:selected="${sh.id == selectedShelterId}"></option>
+    </select>
+    <select name="resourceId">
+        <option value="">All supplies</option>
+        <option th:each="r : ${supplies}" th:value="${r.id}" th:text="${r.name}"
+                th:selected="${r.id == selectedResourceId}"></option>
+    </select>
+    <button type="submit">Filter</button>
+    <a th:href="@{/relief-distributions/new}" class="button">+ New distribution</a>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>Supply</th>
+        <th>Quantity</th>
+        <th>Shelter</th>
+        <th>Status</th>
+        <th>Dispatched at</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="d : ${distributions}">
+        <td th:text="${d.resourceName}"></td>
+        <td th:text="${d.quantity} + ' ' + ${d.resourceUnit}"></td>
+        <td th:text="${d.shelterName}"></td>
+        <td th:text="${d.status}"></td>
+        <td th:text="${d.dispatchedAt}"></td>
+        <td><a th:href="@{/relief-distributions/{id}(id=${d.id})}">View</a></td>
+    </tr>
+    <tr th:if="${distributions.isEmpty()}">
+        <td colspan="6">No distributions match this filter.</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

@@ -1,6 +1,8 @@
 package com.group18.dewecs.domain;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,6 +36,10 @@ public class Shelter {
     @NotNull
     @PositiveOrZero
     private Integer currentOccupancy;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    private ShelterStatus status;
 
     @NotNull
     @ManyToOne
@@ -78,6 +84,14 @@ public class Shelter {
 
     public void setCurrentOccupancy(Integer currentOccupancy) {
         this.currentOccupancy = currentOccupancy;
+    }
+
+    public ShelterStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ShelterStatus status) {
+        this.status = status;
     }
 
     public Organization getOrganization() {

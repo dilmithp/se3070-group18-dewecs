@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${resourceId != null} ? 'Edit relief supply' : 'New relief supply'">Relief supply form</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1 th:text="${resourceId != null} ? 'Edit relief supply' : 'New relief supply'"></h1>
+
+<form th:action="${resourceId != null} ? @{/relief-supplies/{id}(id=${resourceId})} : @{/relief-supplies}"
+      th:object="${form}" method="post">
+
+    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+    <label>District
+        <small th:if="${resourceId != null}">(changing this here has no effect — district is fixed after creation)</small>
+        <select th:field="*{districtId}">
+            <option value="">-- select --</option>
+            <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+
+    <label>Owning organization
+        <small th:if="${resourceId != null}">(changing this here has no effect — organization is fixed after creation)</small>
+        <select th:field="*{organizationId}">
+            <option value="">-- select --</option>
+            <option th:each="o : ${organizations}" th:value="${o.id}" th:text="${o.name}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('organizationId')}" th:errors="*{organizationId}"></p>
+
+    <label>Name
+        <input type="text" th:field="*{name}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+
+    <label>Category
+        <select th:field="*{type}">
+            <option value="">-- select --</option>
+            <option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.name()}"></option>
+        </select>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
+
+    <label>Unit
+        <input type="text" th:field="*{unit}" placeholder="kg, boxes, liters..."/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('unit')}" th:errors="*{unit}"></p>
+
+    <label>Quantity
+        <small th:if="${resourceId != null}">(changing this here has no effect — use Restock instead)</small>
+        <input type="number" min="0" th:field="*{quantity}"/>
+    </label>
+    <p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+
+    <button type="submit" th:text="${resourceId != null} ? 'Save changes' : 'Create supply'"></button>
+    <a th:href="${resourceId != null} ? @{/relief-supplies/{id}(id=${resourceId})} : @{/relief-supplies}">Cancel</a>
+</form>
+</body>
+</html>
