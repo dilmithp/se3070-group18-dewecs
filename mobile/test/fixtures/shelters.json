@@ -1,0 +1,10 @@
+{
+  "shelters": [
+    {"id": 2, "name": "Colombo Sports Complex", "districtName": "Colombo", "districtId": 1, "capacity": 300,
+     "currentOccupancy": 120, "status": "OPEN", "organizationName": "DMC"},
+    {"id": 3, "name": "Galle Town Hall", "districtName": "Galle", "districtId": 2, "capacity": 80,
+     "currentOccupancy": 80, "status": "FULL", "organizationName": "DMC"}
+  ],
+  "statuses": ["OPEN", "FULL", "CLOSED"],
+  "districts": []
+}

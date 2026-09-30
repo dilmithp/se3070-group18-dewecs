@@ -1,0 +1,12 @@
+{
+  "supplies": [
+    {"id": 1, "name": "Rice", "type": "FOOD", "unit": "bags", "quantity": 120, "districtName": "Colombo",
+     "districtId": 1, "organizationName": "Lanka Relief Foundation", "lowStock": false, "outOfStock": false},
+    {"id": 3, "name": "First-aid kits", "type": "MEDICAL_SUPPLIES", "unit": "kits", "quantity": 6, "districtName": "Galle",
+     "districtId": 2, "organizationName": "Red Cross", "lowStock": true, "outOfStock": false}
+  ],
+  "types": ["FOOD", "WATER", "MEDICAL_SUPPLIES", "SHELTER_MATERIALS", "EQUIPMENT", "FUEL", "OTHER"],
+  "districts": [{"id": 1, "name": "Colombo"}],
+  "selectedType": null,
+  "lowStockOnly": false
+}

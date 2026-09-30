@@ -7,9 +7,12 @@ import 'package:http_parser/http_parser.dart';
 import '../models/api_problem.dart';
 import '../models/citizen.dart';
 import '../models/ground_report.dart';
+import '../models/relief_distribution.dart';
+import '../models/relief_supply.dart';
 import '../models/reference_data.dart';
 import '../models/report_page.dart';
 import '../models/report_submission.dart';
+import '../models/shelter_summary.dart';
 import 'api_exception.dart';
 import 'dewecs_api.dart';
 import 'image_type.dart';
@@ -86,6 +89,68 @@ class HttpDewecsApi implements DewecsApi {
     final response = await _send(http.Request('GET', uri), timeout);
     return _parse(response, (json) => ReportPage.fromJson(json));
   }
+
+  @override
+  Future<List<ReliefSupply>> listSupplies({String? type, int? districtId, bool lowStockOnly = false}) async {
+    final query = <String, String>{
+      'type': ?type,
+      'districtId': ?districtId?.toString(),
+      if (lowStockOnly) 'lowStockOnly': 'true',
+    };
+    final response = await _send(http.Request('GET', _uri('/relief-supplies', query)), timeout);
+    return _parse(response, (json) => _list(json, 'supplies', ReliefSupply.fromJson));
+  }
+
+  @override
+  Future<ReliefSupply> getSupply(int supplyId) async {
+    final response = await _send(http.Request('GET', _uri('/relief-supplies/$supplyId')), timeout);
+    return _parse(response, (json) => ReliefSupply.fromJson(json['supply'] as Map<String, dynamic>));
+  }
+
+  @override
+  Future<List<ReliefDistribution>> listDistributions({String? status, int? shelterId, int? supplyId}) async {
+    final query = <String, String>{
+      'status': ?status,
+      'shelterId': ?shelterId?.toString(),
+      // The server names the supply filter resourceId.
+      'resourceId': ?supplyId?.toString(),
+    };
+    final response = await _send(http.Request('GET', _uri('/relief-distributions', query)), timeout);
+    return _parse(response, (json) => _list(json, 'distributions', ReliefDistribution.fromJson));
+  }
+
+  @override
+  Future<ReliefDistribution> getDistribution(int distributionId) async {
+    final response = await _send(http.Request('GET', _uri('/relief-distributions/$distributionId')), timeout);
+    return _parse(
+        response, (json) => ReliefDistribution.fromJson(json['distribution'] as Map<String, dynamic>));
+  }
+
+  @override
+  Future<List<ShelterSummary>> listShelters() async {
+    final response = await _send(http.Request('GET', _uri('/shelters')), timeout);
+    return _parse(response, (json) => _list(json, 'shelters', ShelterSummary.fromJson));
+  }
+
+  @override
+  Future<DistributionCreated> createDistribution({
+    required int supplyId,
+    required int shelterId,
+    required int quantity,
+  }) async {
+    // The server names the supply field resourceId.
+    final request = _jsonRequest('POST', '/relief-distributions', {
+      'resourceId': supplyId,
+      'shelterId': shelterId,
+      'quantity': quantity,
+    });
+    final response = await _send(request, timeout);
+    return _parse(response, DistributionCreated.fromJson);
+  }
+
+  /// Officer pages wrap a collection in the page model, for example {"supplies":[...],"types":[...]}.
+  List<T> _list<T>(Map<String, dynamic> json, String key, T Function(Map<String, dynamic>) fromJson) =>
+      (json[key] as List<dynamic>).map((e) => fromJson(e as Map<String, dynamic>)).toList();
 
   @override
   String? absolutePhotoUrl(GroundReport report) =>

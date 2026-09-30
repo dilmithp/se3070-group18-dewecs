@@ -4,9 +4,12 @@ import '../models/citizen.dart';
 import '../models/contract_rules.dart';
 import '../models/district.dart';
 import '../models/ground_report.dart';
+import '../models/relief_distribution.dart';
+import '../models/relief_supply.dart';
 import '../models/reference_data.dart';
 import '../models/report_page.dart';
 import '../models/report_submission.dart';
+import '../models/shelter_summary.dart';
 import '../models/sri_lanka_time.dart';
 import 'api_exception.dart';
 import 'dewecs_api.dart';
@@ -90,6 +93,47 @@ class FakeDewecsApi implements DewecsApi {
           note: 'Rescue team dispatched and the road was closed.'),
       seed('CYCLONE', 'NEEDS_INFO', 'Strong winds, roof damage', 3, const Duration(days: 2)),
     ]);
+  }
+
+  // UC-04 placeholders: the relief data and rules arrive with the Demo mode slice.
+  @override
+  Future<List<ReliefSupply>> listSupplies({String? type, int? districtId, bool lowStockOnly = false}) async {
+    await _gate();
+    return const [];
+  }
+
+  @override
+  Future<ReliefSupply> getSupply(int supplyId) async {
+    await _gate();
+    throw _notFound('Relief supply not found: $supplyId');
+  }
+
+  @override
+  Future<List<ReliefDistribution>> listDistributions({String? status, int? shelterId, int? supplyId}) async {
+    await _gate();
+    return const [];
+  }
+
+  @override
+  Future<ReliefDistribution> getDistribution(int distributionId) async {
+    await _gate();
+    throw _notFound('Relief distribution not found: $distributionId');
+  }
+
+  @override
+  Future<List<ShelterSummary>> listShelters() async {
+    await _gate();
+    return const [];
+  }
+
+  @override
+  Future<DistributionCreated> createDistribution({
+    required int supplyId,
+    required int shelterId,
+    required int quantity,
+  }) async {
+    await _gate();
+    throw _notFound('Relief supply not found: $supplyId');
   }
 
   Future<void> _gate() async {

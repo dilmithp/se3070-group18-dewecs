@@ -1,0 +1,13 @@
+{
+  "distributions": [
+    {"id": 7, "resourceName": "Rice", "resourceUnit": "bags", "quantity": 40, "shelterName": "Colombo Sports Complex",
+     "shelterId": 2, "status": "DISPATCHED", "organizationName": "Lanka Relief Foundation",
+     "dispatchedAt": "2026-10-07T14:03:11.440", "deliveredAt": null},
+    {"id": 6, "resourceName": "Bottled water", "resourceUnit": "cases", "quantity": 25, "shelterName": "Galle Town Hall",
+     "shelterId": 3, "status": "DELIVERED", "organizationName": "Lanka Relief Foundation",
+     "dispatchedAt": "2026-10-06T09:00:00.000", "deliveredAt": "2026-10-06T12:30:00.000"}
+  ],
+  "statuses": ["PREPARING", "DISPATCHED", "IN_TRANSIT", "DELIVERED", "CANCELLED"],
+  "shelters": [],
+  "supplies": []
+}
