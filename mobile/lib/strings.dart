@@ -193,6 +193,57 @@ class S {
   static const deleteBody = 'It has not reached the server yet and will be removed from this phone.';
   static const reportDeleted = 'Report deleted.';
 
+  // Shelters and rescue (officer operations)
+  static const shelterNoun = 'Shelter';
+  static const rescueNoun = 'Rescue';
+  static String placesTaken(int taken, int capacity) => '$taken of $capacity places taken';
+  static String placesFree(int free) => free == 1 ? '1 place free' : '$free places free';
+  static const noPlacesFree = 'No places free';
+
+  static String shelterStatusLabel(String raw) {
+    switch (raw) {
+      case 'OPEN':
+        return 'Open';
+      case 'FULL':
+        return 'Full';
+      case 'CLOSED':
+        return 'Closed';
+    }
+    return raw;
+  }
+
+  static String rescueStatusLabel(String raw) {
+    switch (raw) {
+      case 'PENDING':
+        return 'Waiting for a team';
+      case 'ASSIGNED':
+        return 'Team assigned';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'CANCELLED':
+        return 'Cancelled';
+    }
+    return raw;
+  }
+
+  static String priorityLabel(String raw) {
+    switch (raw) {
+      case 'LOW':
+        return 'Low priority';
+      case 'MODERATE':
+        return 'Moderate priority';
+      case 'HIGH':
+        return 'High priority';
+      case 'CRITICAL':
+        return 'Critical priority';
+    }
+    return raw;
+  }
+
+  static String teamAssigned(String team) => 'Team: $team';
+  static const noTeamYet = 'No team assigned yet';
+  static const noPosition = 'No position given';
+
   // Placeholders used until a screen is built
   static const comingSoon = 'Coming soon';
 }
