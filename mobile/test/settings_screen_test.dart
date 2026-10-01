@@ -33,7 +33,7 @@ void main() {
 
   testWidgets('test connection shows a readable error when the server is unreachable', (tester) async {
     final app = await openSettings(tester);
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
 
     await tester.tap(find.text(S.testConnection));
     await tester.pumpAndSettle();
@@ -43,7 +43,7 @@ void main() {
 
   testWidgets('a failed test also says what to try next', (tester) async {
     final app = await openSettings(tester);
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
     await tester.enterText(find.widgetWithText(TextFormField, S.baseUrlLabel), 'http://10.0.2.2:8080');
 
     await tester.tap(find.text(S.testConnection));

@@ -1,5 +1,5 @@
 import 'package:dewecs_mobile/api/api_exception.dart';
-import 'package:dewecs_mobile/api/fake_dewecs_api.dart';
+import 'package:dewecs_mobile/api/demo_dewecs_api.dart';
 import 'package:dewecs_mobile/models/ground_report.dart';
 import 'package:dewecs_mobile/models/queued_report.dart';
 import 'package:dewecs_mobile/models/reference_data.dart';
@@ -14,7 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 const png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3];
 
 /// Fails the first [photoFailures] uploads like a dropped connection.
-class PhotoFlakyApi extends FakeDewecsApi {
+class PhotoFlakyApi extends DemoDewecsApi {
   PhotoFlakyApi({this.photoFailures = 0}) : super(latency: Duration.zero);
 
   int photoFailures;
@@ -334,7 +334,7 @@ void main() {
   test('single flight: two overlapping runs send the report once', () async {
     final slow = PhotoFlakyApi();
     api = slow;
-    final slowApi = FakeDewecsApi(latency: const Duration(milliseconds: 30));
+    final slowApi = DemoDewecsApi(latency: const Duration(milliseconds: 30));
     final id = (await slowApi.identify(nic: '199012345678', fullName: 'N', phone: '0771234567', districtId: 1)).id;
     citizenId = id;
     final service = SyncService(

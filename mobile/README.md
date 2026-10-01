@@ -15,7 +15,7 @@ and sent when a connection exists. Sending is safe to retry, so a lost response 
 - **My reports:** waiting reports first, then the server list with status chips (Waiting for review, Reviewed by
   officers, Action taken, Not accepted, More information needed), the officers' note once action was taken, photo and
   an Open in maps button. The last list is cached, so it still shows offline.
-- **Demo mode:** a built-in fake server, so the app can be shown without a backend (Settings).
+- **Demo mode:** a built-in demo server, so the app can be shown without a backend (Settings).
 
 ## Architecture
 
@@ -26,7 +26,7 @@ backend over HTTP only (contract v1, see `../doc/MOBILE_API.md`); it never conta
 lib/
   config/     theme and default server address
   models/     plain Dart classes with fromJson/toJson; contract rules; Sri Lanka time helper (pure Dart)
-  api/        DewecsApi (one method per endpoint), HttpDewecsApi, FakeDewecsApi, ApiException (pure Dart)
+  api/        DewecsApi (one method per endpoint), HttpDewecsApi, DemoDewecsApi, ApiException (pure Dart)
   storage/    key-value store (shared_preferences), queue repository, photo store
   sync/       SyncService (the queue engine), back-off, connectivity trigger
   state/      controllers (settings, identity, reference data, reports), device services (GPS, camera, maps)
@@ -74,11 +74,11 @@ Officers see the reports and photos at http://localhost:8080/ground-reports (loc
 
 ## Demo mode
 
-Settings, Demo mode. The app then uses a fake server in memory: four districts, seeded reports in different statuses
+Settings, Demo mode. The app then uses a demo server in memory: four districts, seeded reports in different statuses
 (the first citizen to identify owns them, including one with an officers' note), 400 ms latency, replay detection and
 the same rules as the real contract. Two switches force failures so offline behaviour can be shown on stage:
-"simulate no connection" and "simulate a server error (500)"; "wipe the fake server" imitates a server reset.
-Switching Demo mode in either direction asks first and clears the stored identity, queue and caches, because fake ids
+"simulate no connection" and "simulate a server error (500)"; "wipe the demo server" imitates a server reset.
+Switching Demo mode in either direction asks first and clears the stored identity, queue and caches, because demo ids
 must never reach the real backend.
 
 ## How offline queueing and retries work
@@ -104,7 +104,7 @@ must never reach the real backend.
 
 ```powershell
 cd mobile
-flutter test                                  # models, API layer (MockClient), fake server, validators,
+flutter test                                  # models, API layer (MockClient), demo server, validators,
                                               # queue state machine, sync engine, controllers, widgets
 dart run tool/smoke.dart http://localhost:8092   # real backend (start it on port 8092 with the local profile)
 ```

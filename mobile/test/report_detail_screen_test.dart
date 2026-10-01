@@ -135,13 +135,13 @@ void main() {
     expect(fixed.category, 'FLOOD');
     expect(fixed.state, QueueState.synced);
     expect(fixed.capturedAt, isNot(oldCapturedAt));
-    expect(app.fake.storedReports.where((r) => r.description == 'Shaking ground'), hasLength(1));
+    expect(app.demo.storedReports.where((r) => r.description == 'Shaking ground'), hasLength(1));
   });
 
   testWidgets('a queued report that is not yet stored can be deleted but not edited', (tester) async {
     final app = TestApp();
     await app.identify();
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
     await app.dependencies.sync.enqueue(refused(app, id: 'q')..category = 'FLOOD');
     await app.pump(tester);
 
@@ -154,7 +154,7 @@ void main() {
 
   testWidgets('a sent report whose photo was refused shows the note until the server list returns it', (tester) async {
     final api = StaleListApi();
-    final app = TestApp(fake: api);
+    final app = TestApp(demo: api);
     await app.identify();
     app.photos.put('bad.jpg', [1, 2, 3, 4]);
     final path = await app.photos.save('bad.jpg');

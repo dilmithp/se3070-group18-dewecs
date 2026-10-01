@@ -41,7 +41,7 @@ class AppDependencies {
   final PhotoPicker picker;
   ConnectivityTrigger? _trigger;
 
-  /// The optional arguments let tests plug in the fake server, an in-memory photo store and fake device services.
+  /// The optional arguments let tests plug in the demo server, an in-memory photo store and stub device services.
   factory AppDependencies.create(
     KeyValueStore store, {
     DewecsApi? apiOverride,

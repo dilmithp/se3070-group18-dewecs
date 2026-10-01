@@ -198,21 +198,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text(S.demoForceNetwork),
-                  value: settings.fake.failNetwork,
-                  onChanged: settings.setFakeNetworkFailure,
+                  value: settings.demo.failNetwork,
+                  onChanged: settings.setDemoNetworkFailure,
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text(S.demoForce500),
-                  value: settings.fake.failStatus == 500,
-                  onChanged: settings.setFakeServerError,
+                  value: settings.demo.failStatus == 500,
+                  onChanged: settings.setDemoServerError,
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text(S.demoResetServer),
                   onTap: () {
                     final messenger = ScaffoldMessenger.of(context);
-                    settings.resetFakeServer();
+                    settings.resetDemoServer();
                     messenger.showSnackBar(const SnackBar(content: Text(S.demoServerWiped)));
                   },
                 ),

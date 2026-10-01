@@ -1,4 +1,4 @@
-/// Rules of contract v1 shared by the form validators and the fake server.
+/// Rules of contract v1 shared by the form validators and the demo server.
 final nicPattern = RegExp(r'^(\d{9}[VX]|\d{12})$');
 final phonePattern = RegExp(r'^\+?[0-9][0-9 -]{7,14}$');
 

@@ -54,13 +54,13 @@ void main() {
     expect(items.single.gpsLat, 6.9271234);
     expect(items.single.capturedAt, matches(RegExp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}$')));
     expect(find.text(S.reportSent), findsOneWidget);
-    expect(app.fake.storedReports.where((r) => r.description == 'Water over the road near the school'), hasLength(1));
+    expect(app.demo.storedReports.where((r) => r.description == 'Water over the road near the school'), hasLength(1));
   });
 
   testWidgets('offline: the report is saved on the phone and waits', (tester) async {
     final app = await openForm(tester);
     await fillForm(tester);
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
 
     await tester.tap(sendButton);
     await tester.pumpAndSettle();
@@ -174,7 +174,7 @@ void main() {
     final item = app.dependencies.sync.items.single;
     expect(item.photoPath, startsWith('memory://'));
     expect(item.photoUploaded, isTrue);
-    expect(app.fake.storedReports.firstWhere((r) => r.id == item.serverId).photoUrl, isNotNull);
+    expect(app.demo.storedReports.firstWhere((r) => r.id == item.serverId).photoUrl, isNotNull);
   });
 
   testWidgets('removing the photo deletes the stored copy', (tester) async {

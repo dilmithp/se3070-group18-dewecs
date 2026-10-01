@@ -2,7 +2,7 @@ import 'package:image_picker/image_picker.dart';
 
 enum PhotoSource { camera, gallery }
 
-/// Camera or gallery behind a small interface so tests can plug in a fake.
+/// Camera or gallery behind a small interface so tests can plug in a stub.
 abstract class PhotoPicker {
   /// The path of the picked file, or null when the user cancelled.
   Future<String?> pick(PhotoSource source);

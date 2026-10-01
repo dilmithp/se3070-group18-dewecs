@@ -1,5 +1,5 @@
 import 'package:dewecs_mobile/api/dewecs_api.dart';
-import 'package:dewecs_mobile/api/fake_dewecs_api.dart';
+import 'package:dewecs_mobile/api/demo_dewecs_api.dart';
 import 'package:dewecs_mobile/main.dart';
 import 'package:dewecs_mobile/state/location_service.dart';
 import 'package:dewecs_mobile/state/photo_picker.dart';
@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// A GPS fix, or a failure, chosen by the test.
-class FakeLocation implements LocationService {
+class StubLocation implements LocationService {
   LocationReading? reading = const LocationReading(lat: 6.9271, lng: 79.8612, accuracyMeters: 12);
   LocationProblem? problem;
   int settingsOpened = 0;
@@ -29,8 +29,8 @@ class FakeLocation implements LocationService {
 }
 
 /// Returns a path in the in-memory photo store, or null (the user cancelled).
-class FakePicker implements PhotoPicker {
-  FakePicker(this.photos);
+class StubPicker implements PhotoPicker {
+  StubPicker(this.photos);
 
   final MemoryPhotoStore photos;
   bool cancel = false;
@@ -45,15 +45,15 @@ class FakePicker implements PhotoPicker {
   }
 }
 
-/// Everything a widget test needs: in-memory storage, the fake server with no latency and fake device services.
+/// Everything a widget test needs: in-memory storage, the demo server with no latency and stub device services.
 class TestApp {
-  TestApp({MemoryKeyValueStore? store, FakeDewecsApi? fake, DewecsApi? api})
+  TestApp({MemoryKeyValueStore? store, DemoDewecsApi? demo, DewecsApi? api})
       : store = store ?? MemoryKeyValueStore(),
-        fake = fake ?? FakeDewecsApi(latency: Duration.zero) {
-    picker = FakePicker(photos);
+        demo = demo ?? DemoDewecsApi(latency: Duration.zero) {
+    picker = StubPicker(photos);
     dependencies = AppDependencies.create(
       this.store,
-      apiOverride: api ?? this.fake,
+      apiOverride: api ?? this.demo,
       photoStore: photos,
       location: location,
       picker: picker,
@@ -66,10 +66,10 @@ class TestApp {
   }
 
   final MemoryKeyValueStore store;
-  final FakeDewecsApi fake;
+  final DemoDewecsApi demo;
   final MemoryPhotoStore photos = MemoryPhotoStore();
-  final FakeLocation location = FakeLocation();
-  late final FakePicker picker;
+  final StubLocation location = StubLocation();
+  late final StubPicker picker;
 
   /// Every address the app tried to open (maps), and the answers to give in order (default: success).
   final List<Uri> opened = [];

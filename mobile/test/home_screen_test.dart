@@ -1,4 +1,4 @@
-import 'package:dewecs_mobile/api/fake_dewecs_api.dart';
+import 'package:dewecs_mobile/api/demo_dewecs_api.dart';
 import 'package:dewecs_mobile/models/queued_report.dart';
 import 'package:dewecs_mobile/models/report_page.dart';
 import 'package:dewecs_mobile/models/report_submission.dart';
@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'test_helpers.dart';
 
 /// Hides chosen report ids from the list, like a server that has not indexed a new report yet.
-class StaleListApi extends FakeDewecsApi {
+class StaleListApi extends DemoDewecsApi {
   StaleListApi() : super(latency: Duration.zero);
 
   final Set<int> hidden = {};
@@ -78,7 +78,7 @@ void main() {
 
   testWidgets('empty state when the citizen has no reports', (tester) async {
     final app = TestApp();
-    await app.fake.identify(nic: '199512345678', fullName: 'First', phone: '0771234567', districtId: 1);
+    await app.demo.identify(nic: '199512345678', fullName: 'First', phone: '0771234567', districtId: 1);
     await app.identify();
     await app.pump(tester);
 
@@ -93,7 +93,7 @@ void main() {
   testWidgets('waiting items come first with their own chip and a Send now button', (tester) async {
     final app = TestApp();
     await app.identify();
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
     await app.dependencies.sync.enqueue(queued(app, 'a'));
     await app.pump(tester);
 
@@ -105,7 +105,7 @@ void main() {
     expect(find.text('River is overflowing near the bridge'), findsNothing, reason: 'no saved copy yet');
     expect(local, greaterThan(0));
 
-    app.fake.failNetwork = false;
+    app.demo.failNetwork = false;
     await tester.tap(find.text(S.sendNow));
     await tester.pumpAndSettle();
 
@@ -119,7 +119,7 @@ void main() {
     await app.pump(tester);
     expect(find.text('Action taken'), findsOneWidget);
 
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
     await app.dependencies.reports.refresh();
     await tester.pumpAndSettle();
 
@@ -132,7 +132,7 @@ void main() {
     await first.identify();
     await first.dependencies.reports.refresh();
 
-    final second = TestApp(store: first.store, fake: FakeDewecsApi(latency: Duration.zero)..failNetwork = true);
+    final second = TestApp(store: first.store, demo: DemoDewecsApi(latency: Duration.zero)..failNetwork = true);
     await second.pump(tester);
 
     expect(find.text(S.offlineBanner), findsOneWidget);
@@ -142,13 +142,13 @@ void main() {
   testWidgets('a server error with nothing to show gives an error state with Try again', (tester) async {
     final app = TestApp();
     await app.identify();
-    app.fake.failStatus = 500;
+    app.demo.failStatus = 500;
     await app.pump(tester);
 
     expect(find.text(S.unexpectedError), findsOneWidget);
     expect(find.text(S.retry), findsOneWidget);
 
-    app.fake.failStatus = null;
+    app.demo.failStatus = null;
     await tester.tap(find.text(S.retry));
     await tester.pumpAndSettle();
     expect(find.text('Action taken'), findsOneWidget);
@@ -159,7 +159,7 @@ void main() {
     await app.identify();
     final id = app.dependencies.identity.citizen!.id;
     for (var i = 0; i < 25; i++) {
-      await app.fake.submitReport(ReportSubmission(
+      await app.demo.submitReport(ReportSubmission(
         citizenId: id,
         districtId: 1,
         category: 'FLOOD',
@@ -185,7 +185,7 @@ void main() {
 
   testWidgets('a sent report not yet in the server list is kept, then dropped once the list returns its id', (tester) async {
     final api = StaleListApi();
-    final app = TestApp(fake: api);
+    final app = TestApp(demo: api);
     await app.identify();
     await app.pump(tester);
     final item = queued(app, 'a');
@@ -209,11 +209,11 @@ void main() {
   testWidgets('a 404 on the list resets the identity, explains it and keeps the waiting reports', (tester) async {
     final app = TestApp();
     await app.identify();
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
     await app.dependencies.sync.enqueue(queued(app, 'a'));
     await app.pump(tester);
-    app.fake.failNetwork = false;
-    app.fake.resetServer();
+    app.demo.failNetwork = false;
+    app.demo.resetServer();
 
     await app.dependencies.reports.refresh();
     await tester.pumpAndSettle();
@@ -234,7 +234,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final newId = app.dependencies.identity.citizen!.id;
-    final stored = app.fake.storedReports.where((r) => r.description == 'Local report a');
+    final stored = app.demo.storedReports.where((r) => r.description == 'Local report a');
     expect(stored, hasLength(1), reason: 'sent after identifying again');
     expect(stored.single.citizenId, newId, reason: 'rewritten to the new citizen');
     final left = app.dependencies.sync.items.where((i) => i.localId == 'a');

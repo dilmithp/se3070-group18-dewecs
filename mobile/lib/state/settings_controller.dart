@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../api/dewecs_api.dart';
-import '../api/fake_dewecs_api.dart';
+import '../api/demo_dewecs_api.dart';
 import '../api/http_dewecs_api.dart';
 import '../config/app_config.dart';
 import '../storage/key_value_store.dart';
@@ -19,22 +19,22 @@ class SettingsController extends ChangeNotifier {
   static const _kDemo = 'settings.demoMode';
 
   final KeyValueStore _store;
-  /// Tests plug the fake server in here, whatever the settings say.
+  /// Tests plug the demo server in here, whatever the settings say.
   final DewecsApi? apiOverride;
   final http.Client? httpClient;
   final List<Clearable> _clearables = [];
 
   late String _baseUrl;
   late bool _demoMode;
-  FakeDewecsApi? _fake;
+  DemoDewecsApi? _demo;
   HttpDewecsApi? _http;
 
   String get baseUrl => _baseUrl;
 
   bool get demoMode => _demoMode;
 
-  /// The fake server (only meaningful in Demo mode); created on first use.
-  FakeDewecsApi get fake => _fake ??= FakeDewecsApi();
+  /// The demo server (only meaningful in Demo mode); created on first use.
+  DemoDewecsApi get demo => _demo ??= DemoDewecsApi();
 
   /// The API for the current settings. Callers fetch it each time, so a changed address takes effect at once.
   DewecsApi get api {
@@ -43,7 +43,7 @@ class SettingsController extends ChangeNotifier {
       return override;
     }
     if (_demoMode) {
-      return fake;
+      return demo;
     }
     final current = _http;
     if (current != null && current.baseUrl == _baseUrl.replaceAll(RegExp(r'/+$'), '')) {
@@ -58,10 +58,10 @@ class SettingsController extends ChangeNotifier {
     if (override != null) {
       return override;
     }
-    return _demoMode ? fake : HttpDewecsApi(baseUrl: address, client: httpClient);
+    return _demoMode ? demo : HttpDewecsApi(baseUrl: address, client: httpClient);
   }
 
-  /// Address of a server photo, or null in Demo mode (the fake server has no photo files to load).
+  /// Address of a server photo, or null in Demo mode (the demo server has no photo files to load).
   String? photoUrlFor(String photoPath) =>
       _demoMode ? null : '${_baseUrl.replaceAll(RegExp(r'/+$'), '')}$photoPath';
 
@@ -73,7 +73,7 @@ class SettingsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Fake ids must never reach the real backend, so everything stored on the phone is wiped first.
+  /// Demo ids must never reach the real backend, so everything stored on the phone is wiped first.
   Future<void> setDemoMode(bool value) async {
     if (value == _demoMode) {
       return;
@@ -81,25 +81,25 @@ class SettingsController extends ChangeNotifier {
     for (final clearable in _clearables) {
       await clearable.clearLocalData();
     }
-    _fake = null;
+    _demo = null;
     _demoMode = value;
     await _store.setString(_kDemo, value.toString());
     notifyListeners();
   }
 
-  /// Wipes the fake server (Demo mode only), as if the real server database had been reset.
-  void resetFakeServer() {
-    fake.resetServer();
+  /// Wipes the demo server (Demo mode only), as if the real server database had been reset.
+  void resetDemoServer() {
+    demo.resetServer();
     notifyListeners();
   }
 
-  void setFakeNetworkFailure(bool value) {
-    fake.failNetwork = value;
+  void setDemoNetworkFailure(bool value) {
+    demo.failNetwork = value;
     notifyListeners();
   }
 
-  void setFakeServerError(bool value) {
-    fake.failStatus = value ? 500 : null;
+  void setDemoServerError(bool value) {
+    demo.failStatus = value ? 500 : null;
     notifyListeners();
   }
 }

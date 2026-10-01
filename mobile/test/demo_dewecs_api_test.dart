@@ -1,12 +1,12 @@
 import 'package:dewecs_mobile/api/api_exception.dart';
-import 'package:dewecs_mobile/api/fake_dewecs_api.dart';
+import 'package:dewecs_mobile/api/demo_dewecs_api.dart';
 import 'package:dewecs_mobile/models/report_submission.dart';
 import 'package:dewecs_mobile/models/sri_lanka_time.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 1, 2, 3];
 
-FakeDewecsApi newApi() => FakeDewecsApi(latency: Duration.zero);
+DemoDewecsApi newApi() => DemoDewecsApi(latency: Duration.zero);
 
 Future<ApiException> failure(Future<Object?> call) async {
   try {
@@ -29,10 +29,12 @@ ReportSubmission submission(int citizenId,
       capturedAt: capturedAt ?? sriLankaNowString(),
     );
 
-Future<int> identified(FakeDewecsApi api, {String nic = '199012345678'}) async =>
+Future<int> identified(DemoDewecsApi api, {String nic = '199012345678'}) async =>
     (await api.identify(nic: nic, fullName: 'Nimal', phone: '0771234567', districtId: 1)).id;
 
 void main() {
+  reliefTests();
+
   test('reference data has four districts and the four categories', () async {
     final data = await newApi().getReferenceData();
 
@@ -177,5 +179,114 @@ void main() {
 
     expect((await failure(api.listCitizenReports(id))).status, 404);
     expect((await failure(api.submitReport(submission(id)))).status, 404);
+  });
+}
+
+void reliefTests() {
+  group('relief (UC-04)', () {
+    test('seed data mirrors the backend demo data, with stock flags decided by the server side', () async {
+      final api = newApi();
+
+      final supplies = await api.listSupplies();
+      final medkits = supplies.firstWhere((s) => s.name == 'First-aid kits');
+
+      expect(supplies.map((s) => s.type), ['FOOD', 'WATER', 'MEDICAL_SUPPLIES', 'SHELTER_MATERIALS']);
+      expect(medkits.quantity, 6);
+      expect(medkits.lowStock, isTrue);
+      expect(supplies.where((s) => s.lowStock).length, 1);
+      expect((await api.listShelters()).map((s) => s.name),
+          ['Galle Central College', 'Kandy Town Hall', 'Colombo Sports Complex']);
+    });
+
+    test('supplies can be filtered by type, district and low stock', () async {
+      final api = newApi();
+
+      expect((await api.listSupplies(type: 'WATER')).single.name, 'Bottled water');
+      expect((await api.listSupplies(districtId: 4)).map((s) => s.id), [3, 4]);
+      expect((await api.listSupplies(lowStockOnly: true)).single.id, 3);
+      expect(await api.listSupplies(type: 'FUEL'), isEmpty);
+    });
+
+    test('a supply and a distribution are found by id and unknown ids are 404', () async {
+      final api = newApi();
+
+      expect((await api.getSupply(2)).organizationName, 'Lanka Relief Foundation');
+      expect((await api.getDistribution(2)).status, 'DELIVERED');
+      expect((await failure(api.getSupply(99))).status, 404);
+      expect((await failure(api.getDistribution(99))).status, 404);
+    });
+
+    test('distributions can be filtered by status, shelter and supply', () async {
+      final api = newApi();
+
+      expect((await api.listDistributions()).length, 3);
+      expect((await api.listDistributions(status: 'DISPATCHED')).single.resourceName, 'Rice (50 kg bags)');
+      expect((await api.listDistributions(shelterId: 3)).single.status, 'DELIVERED');
+      expect((await api.listDistributions(supplyId: 3)).single.status, 'CANCELLED');
+      expect(await api.listDistributions(status: 'IN_TRANSIT'), isEmpty);
+    });
+
+    test('logging a distribution reduces the stock and dispatches it', () async {
+      final api = newApi();
+
+      final created = await api.createDistribution(supplyId: 1, shelterId: 3, quantity: 40);
+      final distribution = await api.getDistribution(created.id);
+
+      expect((await api.getSupply(1)).quantity, 80);
+      expect(distribution.status, 'DISPATCHED');
+      expect(distribution.quantity, 40);
+      expect(distribution.shelterName, 'Colombo Sports Complex');
+      expect(distribution.dispatchedAt, isNotNull);
+      expect(distribution.deliveredAt, isNull);
+      expect((await api.listDistributions(supplyId: 1)).map((d) => d.id), contains(created.id));
+    });
+
+    test('taking the last units flags the supply out of stock; a small remainder flags low stock', () async {
+      final api = newApi();
+
+      await api.createDistribution(supplyId: 3, shelterId: 1, quantity: 6);
+      await api.createDistribution(supplyId: 4, shelterId: 1, quantity: 40);
+
+      final medkits = await api.getSupply(3);
+      final tarps = await api.getSupply(4);
+      expect(medkits.outOfStock, isTrue);
+      expect(medkits.quantity, 0);
+      expect(tarps.quantity, 5);
+      expect(tarps.lowStock, isTrue);
+      expect(tarps.outOfStock, isFalse);
+    });
+
+    test('rules: over-stock, zero quantity and unknown ids are refused and leave the stock unchanged', () async {
+      final api = newApi();
+
+      final over = await failure(api.createDistribution(supplyId: 1, shelterId: 3, quantity: 121));
+      final zero = await failure(api.createDistribution(supplyId: 1, shelterId: 3, quantity: 0));
+      final noSupply = await failure(api.createDistribution(supplyId: 99, shelterId: 3, quantity: 1));
+      final noShelter = await failure(api.createDistribution(supplyId: 1, shelterId: 99, quantity: 1));
+
+      expect(over.status, 400);
+      expect(over.detail, 'Requested quantity exceeds available stock (120 bags available).');
+      expect(zero.fieldErrors['quantity'], isNotNull);
+      expect(noSupply.status, 404);
+      expect(noShelter.status, 404);
+      expect((await api.getSupply(1)).quantity, 120);
+      expect((await api.listDistributions()).length, 3);
+    });
+
+    test('the failure switches apply to relief calls and the server reset restores the seed', () async {
+      final api = newApi();
+      await api.createDistribution(supplyId: 1, shelterId: 3, quantity: 40);
+
+      api.failNetwork = true;
+      expect((await failure(api.listSupplies())).kind, ApiErrorKind.network);
+      api.failNetwork = false;
+      api.failStatus = 500;
+      expect((await failure(api.createDistribution(supplyId: 1, shelterId: 3, quantity: 1))).status, 500);
+      api.failStatus = null;
+      api.resetServer();
+
+      expect((await api.getSupply(1)).quantity, 120);
+      expect((await api.listDistributions()).length, 3);
+    });
   });
 }

@@ -27,7 +27,7 @@ void main() {
   testWidgets('an empty submit shows the validation messages and calls nothing', (tester) async {
     final app = TestApp();
     await app.pump(tester);
-    final callsBefore = app.fake.callCount;
+    final callsBefore = app.demo.callCount;
 
     await tester.tap(find.widgetWithText(FilledButton, S.identifyButton));
     await tester.pumpAndSettle();
@@ -36,7 +36,7 @@ void main() {
     expect(find.text(S.nameRequired), findsOneWidget);
     expect(find.text(S.phoneRequired), findsOneWidget);
     expect(find.text(S.districtRequired), findsOneWidget);
-    expect(app.fake.callCount, callsBefore);
+    expect(app.demo.callCount, callsBefore);
   });
 
   testWidgets('a valid form identifies the citizen and leads to the app', (tester) async {
@@ -57,7 +57,7 @@ void main() {
     final app = TestApp();
     await app.pump(tester);
     await fillValidForm(tester);
-    app.fake.failNetwork = true;
+    app.demo.failNetwork = true;
 
     await tester.tap(find.widgetWithText(FilledButton, S.identifyButton));
     await tester.pumpAndSettle();

@@ -21,7 +21,7 @@ class LocationReading {
   final bool lastKnown;
 }
 
-/// GPS access behind a small interface so tests can plug in a fake.
+/// GPS access behind a small interface so tests can plug in a stub.
 abstract class LocationService {
   /// Throws LocationException with the reason when no position can be had.
   Future<LocationReading> current();

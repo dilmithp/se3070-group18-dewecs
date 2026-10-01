@@ -61,7 +61,7 @@ class S {
   static const notIdentified = 'Not identified yet.';
   static String identifiedAs(String name, String district) => '$name, $district';
   static const demoMode = 'Demo mode';
-  static const demoModeHelp = 'Uses a built-in fake server so the app can be shown without a backend.';
+  static const demoModeHelp = 'Uses a built-in demo server so the app can be shown without a backend.';
   static const demoSwitchTitle = 'Switch demo mode?';
   static const demoSwitchBody =
       'This clears your identity, the waiting reports and the saved data on this phone, because demo data must never '
@@ -69,8 +69,8 @@ class S {
   static const demoSwitchConfirm = 'Switch and clear';
   static const demoForceNetwork = 'Demo: simulate no connection';
   static const demoForce500 = 'Demo: simulate a server error (500)';
-  static const demoResetServer = 'Demo: wipe the fake server';
-  static const demoServerWiped = 'The fake server was wiped.';
+  static const demoResetServer = 'Demo: wipe the demo server';
+  static const demoServerWiped = 'The demo server was wiped.';
   static const settingsDebug = 'Debug';
   static const syncQueueScreen = 'Sync queue';
   static const syncQueueEmpty = 'The queue is empty.';

@@ -4,6 +4,7 @@ import '../models/citizen.dart';
 import '../models/contract_rules.dart';
 import '../models/district.dart';
 import '../models/ground_report.dart';
+import '../models/relief_rules.dart';
 import '../models/relief_distribution.dart';
 import '../models/relief_supply.dart';
 import '../models/reference_data.dart';
@@ -18,10 +19,11 @@ import 'image_type.dart';
 /// In-memory stand-in for the backend (Demo mode and tests). It follows contract v1: replay detection on
 /// citizenId + category + capturedAt, photo rules by status, 404s for unknown ids. Two switches force failures
 /// so the offline behaviour can be shown without a real network problem.
-class FakeDewecsApi implements DewecsApi {
-  FakeDewecsApi({this.latency = const Duration(milliseconds: 400), DateTime Function()? now})
+class DemoDewecsApi implements DewecsApi {
+  DemoDewecsApi({this.latency = const Duration(milliseconds: 400), DateTime Function()? now})
       : _now = now ?? DateTime.now {
     _seedReports();
+    _seedRelief();
   }
 
   /// Delay before every answer (tests pass Duration.zero).
@@ -53,7 +55,17 @@ class FakeDewecsApi implements DewecsApi {
   int _nextPhoto = 1;
   bool _seedsAdopted = false;
 
-  /// All reports on the fake server (tests).
+  // UC-04 relief data.
+  /// The server flags a supply as low stock below this quantity (Resource.LOW_STOCK_THRESHOLD on the backend).
+  /// Only this stand-in server knows the number: the app itself reads the flags from the answers.
+  static const _lowStockThreshold = 10;
+  final List<ReliefSupply> _supplies = [];
+  final List<ShelterSummary> _shelters = [];
+  final List<ReliefDistribution> _distributions = [];
+  final Map<int, int> _distributionSupply = {};
+  int _nextDistributionId = 1;
+
+  /// All reports on the demo server (tests).
   List<GroundReport> get storedReports => List.unmodifiable(_reports);
 
   /// Simulates the server database being wiped: every citizen and report disappears.
@@ -63,6 +75,12 @@ class FakeDewecsApi implements DewecsApi {
     _replayIndex.clear();
     _seedsAdopted = false;
     _seedReports();
+    _supplies.clear();
+    _shelters.clear();
+    _distributions.clear();
+    _distributionSupply.clear();
+    _nextDistributionId = 1;
+    _seedRelief();
   }
 
   void _seedReports() {
@@ -95,37 +113,45 @@ class FakeDewecsApi implements DewecsApi {
     ]);
   }
 
-  // UC-04 placeholders: the relief data and rules arrive with the Demo mode slice.
   @override
   Future<List<ReliefSupply>> listSupplies({String? type, int? districtId, bool lowStockOnly = false}) async {
     await _gate();
-    return const [];
+    return List.unmodifiable(_supplies.where((s) =>
+        (type == null || s.type == type) &&
+        (districtId == null || s.districtId == districtId) &&
+        (!lowStockOnly || s.lowStock)));
   }
 
   @override
   Future<ReliefSupply> getSupply(int supplyId) async {
     await _gate();
-    throw _notFound('Relief supply not found: $supplyId');
+    return _findSupply(supplyId);
   }
 
   @override
   Future<List<ReliefDistribution>> listDistributions({String? status, int? shelterId, int? supplyId}) async {
     await _gate();
-    return const [];
+    return List.unmodifiable(_distributions.where((d) =>
+        (status == null || d.status == status) &&
+        (shelterId == null || d.shelterId == shelterId) &&
+        (supplyId == null || _distributionSupply[d.id] == supplyId)));
   }
 
   @override
   Future<ReliefDistribution> getDistribution(int distributionId) async {
     await _gate();
-    throw _notFound('Relief distribution not found: $distributionId');
+    return _distributions.firstWhere((d) => d.id == distributionId,
+        orElse: () => throw _notFound('Relief distribution not found: $distributionId'));
   }
 
   @override
   Future<List<ShelterSummary>> listShelters() async {
     await _gate();
-    return const [];
+    return List.unmodifiable(_shelters);
   }
 
+  /// Follows POST /relief-distributions: a quantity of zero or less is a field error, unknown ids are 404 and a
+  /// quantity above the remaining stock is refused. Success reduces the stock and dispatches the distribution.
   @override
   Future<DistributionCreated> createDistribution({
     required int supplyId,
@@ -133,7 +159,103 @@ class FakeDewecsApi implements DewecsApi {
     required int quantity,
   }) async {
     await _gate();
-    throw _notFound('Relief supply not found: $supplyId');
+    if (quantity <= 0) {
+      throw _bad('Validation failed.', fieldErrors: {'quantity': 'Quantity must be positive'});
+    }
+    final supply = _findSupply(supplyId);
+    final shelter = _shelters.firstWhere((s) => s.id == shelterId,
+        orElse: () => throw _notFound('Shelter not found: $shelterId'));
+    if (quantity > supply.quantity) {
+      throw _bad('Requested quantity exceeds available stock (${supply.quantity} ${supply.unit} available).');
+    }
+    _setStock(supply, supply.quantity - quantity);
+    final id = _nextDistributionId++;
+    _distributionSupply[id] = supply.id;
+    _distributions.add(ReliefDistribution(
+      id: id,
+      resourceName: supply.name,
+      resourceUnit: supply.unit,
+      quantity: quantity,
+      shelterId: shelter.id,
+      shelterName: shelter.name,
+      status: DistributionStatuses.dispatched,
+      organizationName: supply.organizationName,
+      dispatchedAt: sriLankaNow(_now()),
+    ));
+    return DistributionCreated(id: id, message: 'Relief distribution dispatched.');
+  }
+
+  ReliefSupply _findSupply(int supplyId) => _supplies.firstWhere((s) => s.id == supplyId,
+      orElse: () => throw _notFound('Relief supply not found: $supplyId'));
+
+  /// Replaces a supply with the same supply at another stock level; the server flags follow the quantity.
+  void _setStock(ReliefSupply supply, int quantity) {
+    final index = _supplies.indexWhere((s) => s.id == supply.id);
+    _supplies[index] = supply.withStock(quantity, low: quantity < _lowStockThreshold, out: quantity <= 0);
+  }
+
+  /// Seed data mirrors the backend demo data. Quantities are already net of the seeded distributions.
+  void _seedRelief() {
+    final now = sriLankaNow(_now());
+    ReliefSupply supply(int id, String name, String type, String unit, int quantity, int districtId,
+        String district, String organization) {
+      return ReliefSupply(
+        id: id,
+        name: name,
+        type: type,
+        unit: unit,
+        quantity: quantity,
+        districtId: districtId,
+        districtName: district,
+        organizationName: organization,
+        lowStock: quantity < _lowStockThreshold,
+        outOfStock: quantity <= 0,
+      );
+    }
+
+    _supplies.addAll([
+      supply(1, 'Rice (50 kg bags)', ResourceTypes.food, 'bags', 120, 2, 'Galle', 'Disaster Management Centre'),
+      supply(2, 'Bottled water', ResourceTypes.water, 'cases', 300, 1, 'Colombo', 'Lanka Relief Foundation'),
+      supply(3, 'First-aid kits', ResourceTypes.medicalSupplies, 'kits', 6, 4, 'Kandy', 'Sri Lanka Red Cross'),
+      supply(4, 'Tarpaulins', ResourceTypes.shelterMaterials, 'sheets', 45, 4, 'Kandy', 'Sri Lanka Army'),
+    ]);
+    _shelters.addAll(const [
+      ShelterSummary(
+          id: 1, name: 'Galle Central College', districtName: 'Galle', capacity: 10, currentOccupancy: 9, status: 'OPEN'),
+      ShelterSummary(
+          id: 2, name: 'Kandy Town Hall', districtName: 'Kandy', capacity: 5, currentOccupancy: 5, status: 'FULL'),
+      ShelterSummary(
+          id: 3,
+          name: 'Colombo Sports Complex',
+          districtName: 'Colombo',
+          capacity: 150,
+          currentOccupancy: 0,
+          status: 'OPEN'),
+    ]);
+
+    void distribution(int supplyId, int shelterId, int quantity, String status, Duration age) {
+      final supply = _findSupply(supplyId);
+      final shelter = _shelters.firstWhere((s) => s.id == shelterId);
+      final id = _nextDistributionId++;
+      final dispatched = now.subtract(age);
+      _distributionSupply[id] = supplyId;
+      _distributions.add(ReliefDistribution(
+        id: id,
+        resourceName: supply.name,
+        resourceUnit: supply.unit,
+        quantity: quantity,
+        shelterId: shelter.id,
+        shelterName: shelter.name,
+        status: status,
+        organizationName: supply.organizationName,
+        dispatchedAt: dispatched,
+        deliveredAt: status == DistributionStatuses.delivered ? dispatched.add(const Duration(hours: 3)) : null,
+      ));
+    }
+
+    distribution(1, 1, 20, DistributionStatuses.dispatched, const Duration(hours: 2));
+    distribution(2, 3, 50, DistributionStatuses.delivered, const Duration(hours: 7));
+    distribution(3, 2, 10, DistributionStatuses.cancelled, const Duration(hours: 5));
   }
 
   Future<void> _gate() async {
