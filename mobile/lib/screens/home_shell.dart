@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
 import '../state/identity_controller.dart';
+import '../state/settings_controller.dart';
 import '../strings.dart';
 import '../widgets/needs_identity.dart';
 import 'home_screen.dart';
 import 'identify_screen.dart';
 import 'new_report_screen.dart';
 import 'settings_screen.dart';
+import 'supply_list_screen.dart';
 
 /// Bottom navigation between My reports, New report and Settings. Home and New report need an identified citizen.
 class HomeShell extends StatefulWidget {
@@ -20,8 +22,6 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
-
-  static const _titles = [S.navHome, S.navNewReport, S.navSettings];
 
   bool _wasIdentified = false;
 
@@ -60,34 +60,53 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final identified = context.watch<IdentityController>().isIdentified;
     _identityChanged(identified);
+    final officerMode = context.watch<SettingsController>().officerMode;
+
     // IndexedStack keeps the half-filled report form alive while the user looks at another tab.
+    // Index logic needs care since the Relief tab can appear/disappear.
+    final titles = <String>[
+      S.navHome,
+      S.navNewReport,
+      if (officerMode) S.navRelief,
+      S.navSettings,
+    ];
+
+    var safeIndex = _index;
+    if (safeIndex >= titles.length) {
+      safeIndex = titles.length - 1;
+    }
+    
     final Widget body = IndexedStack(
-      index: _index,
+      index: safeIndex,
       children: [
         identified ? HomeScreen(onNewReport: () => setState(() => _index = 1)) : const NeedsIdentity(),
         identified ? NewReportScreen(onDone: () => setState(() => _index = 0)) : const NeedsIdentity(),
+        if (officerMode) const SupplyListScreen(),
         const SettingsScreen(),
       ],
     );
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
           children: [
             const Icon(Icons.shield, size: 22, color: AppColors.focusOnDark),
             const SizedBox(width: 10),
-            Flexible(child: Text(_titles[_index], overflow: TextOverflow.ellipsis)),
+            Flexible(child: Text(titles[safeIndex], overflow: TextOverflow.ellipsis)),
           ],
         ),
       ),
       body: body,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: S.navHome),
-          NavigationDestination(
-              icon: Icon(Icons.add_circle_outline), selectedIcon: Icon(Icons.add_circle), label: S.navNewReport),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: S.navSettings),
+        selectedIndex: safeIndex,
+        onDestinationSelected: (i) {
+          setState(() => _index = i);
+        },
+        destinations: [
+          const NavigationDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: S.navHome),
+          const NavigationDestination(icon: Icon(Icons.add_circle_outline), selectedIcon: Icon(Icons.add_circle), label: S.navNewReport),
+          if (officerMode) const NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: S.navRelief),
+          const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: S.navSettings),
         ],
       ),
     );

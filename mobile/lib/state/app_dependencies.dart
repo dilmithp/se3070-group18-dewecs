@@ -12,6 +12,7 @@ import 'identity_controller.dart';
 import 'location_service.dart';
 import 'photo_picker.dart';
 import 'reference_data_controller.dart';
+import 'relief_controller.dart';
 import 'reports_controller.dart';
 import 'url_opener.dart';
 import 'settings_controller.dart';
@@ -24,6 +25,7 @@ class AppDependencies {
     required this.reference,
     required this.sync,
     required this.reports,
+    required this.relief,
     required this.opener,
     required this.photos,
     required this.location,
@@ -35,6 +37,7 @@ class AppDependencies {
   final ReferenceDataController reference;
   final SyncService sync;
   final ReportsController reports;
+  final ReliefController relief;
   final UrlOpener opener;
   final PhotoStore photos;
   final LocationService location;
@@ -65,6 +68,7 @@ class AppDependencies {
       autoSchedule: autoSchedule,
     );
     final reports = ReportsController(store, api, identity, sync);
+    final relief = ReliefController(store, api);
     // After a new identification (for example after a server reset) unsent reports move to the new citizen.
     identity.onIdentified = (citizen) async {
       await sync.adoptCitizen(citizen.id);
@@ -74,13 +78,15 @@ class AppDependencies {
       ..registerClearable(identity)
       ..registerClearable(reference)
       ..registerClearable(sync)
-      ..registerClearable(reports);
+      ..registerClearable(reports)
+      ..registerClearable(relief);
     return AppDependencies._(
       settings: settings,
       identity: identity,
       reference: reference,
       sync: sync,
       reports: reports,
+      relief: relief,
       opener: opener ?? launchExternally,
       photos: photos,
       location: location ?? GeolocatorLocationService(),
@@ -95,6 +101,8 @@ class AppDependencies {
       sync.syncNow(force: true);
     }
     _trigger = ConnectivityTrigger(sync)..start();
+    // Also load reference data and relief if any offline data exists or trigger a fetch
+    // Actually fetching is handled by screens when they appear.
   }
 
   void dispose() {
@@ -110,6 +118,7 @@ class AppDependencies {
         ChangeNotifierProvider<ReferenceDataController>.value(value: reference),
         ChangeNotifierProvider<SyncService>.value(value: sync),
         ChangeNotifierProvider<ReportsController>.value(value: reports),
+        ChangeNotifierProvider<ReliefController>.value(value: relief),
       ],
       child: child,
     );

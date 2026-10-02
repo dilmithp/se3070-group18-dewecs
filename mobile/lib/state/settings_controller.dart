@@ -13,10 +13,12 @@ class SettingsController extends ChangeNotifier {
   SettingsController(this._store, {this.apiOverride, this.httpClient}) {
     _baseUrl = _store.getString(_kBaseUrl) ?? defaultBaseUrl();
     _demoMode = _store.getString(_kDemo) == 'true';
+    _officerMode = _store.getString(_kOfficerMode) == 'true';
   }
 
   static const _kBaseUrl = 'settings.baseUrl';
   static const _kDemo = 'settings.demoMode';
+  static const _kOfficerMode = 'settings.officerMode';
 
   final KeyValueStore _store;
   /// Tests plug the demo server in here, whatever the settings say.
@@ -26,12 +28,15 @@ class SettingsController extends ChangeNotifier {
 
   late String _baseUrl;
   late bool _demoMode;
+  late bool _officerMode;
   DemoDewecsApi? _demo;
   HttpDewecsApi? _http;
 
   String get baseUrl => _baseUrl;
 
   bool get demoMode => _demoMode;
+
+  bool get officerMode => _officerMode;
 
   /// The demo server (only meaningful in Demo mode); created on first use.
   DemoDewecsApi get demo => _demo ??= DemoDewecsApi();
@@ -88,6 +93,15 @@ class SettingsController extends ChangeNotifier {
   }
 
   /// Wipes the demo server (Demo mode only), as if the real server database had been reset.
+  Future<void> setOfficerMode(bool value) async {
+    if (value == _officerMode) {
+      return;
+    }
+    _officerMode = value;
+    await _store.setString(_kOfficerMode, value.toString());
+    notifyListeners();
+  }
+
   void resetDemoServer() {
     demo.resetServer();
     notifyListeners();

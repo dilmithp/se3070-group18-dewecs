@@ -95,7 +95,7 @@ void main() {
   testWidgets('switching Demo mode asks first and clears the stored identity', (tester) async {
     final app = await openSettings(tester, identified: true);
 
-    await tester.tap(find.byType(Switch).first);
+    await tester.tap(find.text(S.demoMode));
     await tester.pumpAndSettle();
     expect(find.text(S.demoSwitchTitle), findsOneWidget);
     await tester.tap(find.text(S.cancel));
@@ -103,7 +103,7 @@ void main() {
     expect(app.dependencies.settings.demoMode, isFalse);
     expect(app.dependencies.identity.isIdentified, isTrue);
 
-    await tester.tap(find.byType(Switch).first);
+    await tester.tap(find.text(S.demoMode));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.demoSwitchConfirm));
     await tester.pumpAndSettle();

@@ -184,6 +184,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 12),
         SectionCard(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text(S.officerMode),
+            subtitle: const Text(S.officerModeHelp),
+            value: settings.officerMode,
+            onChanged: (value) => settings.setOfficerMode(value),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SectionCard(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Column(
             children: [
               SwitchListTile(

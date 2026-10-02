@@ -71,6 +71,8 @@ class S {
   static const demoForce500 = 'Demo: simulate a server error (500)';
   static const demoResetServer = 'Demo: wipe the demo server';
   static const demoServerWiped = 'The demo server was wiped.';
+  static const officerMode = 'Officer mode';
+  static const officerModeHelp = 'Shows tools for coordinating relief distributions.';
   static const settingsDebug = 'Debug';
   static const syncQueueScreen = 'Sync queue';
   static const syncQueueEmpty = 'The queue is empty.';
@@ -195,4 +197,19 @@ class S {
 
   // Placeholders used until a screen is built
   static const comingSoon = 'Coming soon';
+
+  // Relief
+  static const navRelief = 'Relief';
+  static const supplyListEmptyTitle = 'No supplies found';
+  static const supplyListEmptyBody = 'Check the filters or try again later.';
+  static const lowStock = 'Low stock';
+  static const outOfStock = 'Out of stock';
+  static const reliefAllTypes = 'All';
+
+  static String reliefType(String raw) {
+    if (raw.isEmpty) return raw;
+    final parts = raw.split('_');
+    final capitalized = parts.map((p) => p.isEmpty ? p : p[0] + p.substring(1).toLowerCase()).join(' ');
+    return capitalized;
+  }
 }
