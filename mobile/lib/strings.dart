@@ -240,6 +240,20 @@ class S {
     return raw;
   }
 
+  static const filterStatus = 'Status';
+  static const filterPriority = 'Priority';
+  static const filterDistrict = 'District';
+  static const filterAll = 'All';
+  static const filterAllDistricts = 'All districts';
+  static const clearFilters = 'Clear filters';
+  static String sheltersCount(int n) => n == 1 ? '1 shelter' : '$n shelters';
+  static const sheltersEmptyTitle = 'No shelters yet';
+  static const sheltersEmptyBody = 'Shelters set up by the officers will appear here.';
+  static const sheltersEmptyFilteredTitle = 'No shelters match';
+  static const sheltersEmptyFilteredBody = 'Try another status or district.';
+  static const sheltersLoadFailed = 'The shelters could not be loaded.';
+  static const sheltersShowingLast = 'Offline - showing the last list received';
+
   static String teamAssigned(String team) => 'Team: $team';
   static const noTeamYet = 'No team assigned yet';
   static const noPosition = 'No position given';
