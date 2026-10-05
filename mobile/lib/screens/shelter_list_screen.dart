@@ -7,12 +7,14 @@ import '../strings.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/shelter_card.dart';
 import '../widgets/state_views.dart';
+import 'shelter_detail_screen.dart';
 
 /// Shelters: filter by status and district, see how full each one is, open one for its detail.
 class ShelterListScreen extends StatefulWidget {
   const ShelterListScreen({super.key, this.onOpen});
 
-  /// Called when a shelter card is tapped.
+  /// Called when a shelter card is tapped. By default the detail screen opens, and the list is fetched again when
+  /// the user comes back, because check-ins and closing change what the cards show.
   final void Function(Shelter shelter)? onOpen;
 
   @override
@@ -29,6 +31,19 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
         context.read<SheltersController>().refresh();
       }
     });
+  }
+
+  Future<void> _open(Shelter shelter) async {
+    final onOpen = widget.onOpen;
+    if (onOpen != null) {
+      onOpen(shelter);
+      return;
+    }
+    final controller = context.read<SheltersController>();
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ShelterDetailScreen(shelter: shelter)));
+    if (mounted) {
+      controller.refresh();
+    }
   }
 
   @override
@@ -75,7 +90,7 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
               style: theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ),
-          for (final shelter in shelters) ShelterCard(shelter: shelter, onTap: () => widget.onOpen?.call(shelter)),
+          for (final shelter in shelters) ShelterCard(shelter: shelter, onTap: () => _open(shelter)),
         ],
       );
     }

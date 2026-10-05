@@ -254,6 +254,35 @@ class S {
   static const sheltersLoadFailed = 'The shelters could not be loaded.';
   static const sheltersShowingLast = 'Offline - showing the last list received';
 
+  // Shelter detail
+  static const shelterDetailTitle = 'Shelter';
+  static const nounOccupancy = 'Occupancy';
+  static const dismiss = 'Dismiss';
+  static const shelterOrganization = 'Organization';
+  static const shelterDistrict = 'District';
+  static const shelterStatusField = 'Status';
+  static String percentFull(int percent) => '$percent% full';
+  static const closeShelter = 'Close shelter';
+  static const closeShelterTitle = 'Close this shelter?';
+  static const closeShelterBody = 'No new occupants can be checked in until it is reopened. Current occupants stay listed.';
+  static const reopenShelter = 'Reopen shelter';
+  static const checkInTitle = 'Check in a new occupant';
+  static const checkInButton = 'Check in';
+  static const occupantNameLabel = 'Full name';
+  static const occupantNicLabel = 'NIC';
+  static const occupantNameRequired = "Enter the occupant's full name";
+  static const occupantNicRequired = "Enter the occupant's NIC";
+  static const checkInClosedNote = 'This shelter is closed. Reopen it to check people in.';
+  static const checkInFullNote = 'This shelter is full. Check someone out to free a place.';
+  static const occupantsTitle = 'Current occupants';
+  static const occupantsEmpty = 'No occupants are checked in right now.';
+  static String occupantCheckedIn(String time) => 'Checked in $time';
+  static const checkOut = 'Check out';
+  static String checkOutTitle(String name) => 'Check out $name?';
+  static const checkOutBody = 'They will be removed from the list of current occupants and the place is freed.';
+  static const shelterLoadFailed = 'The shelter could not be loaded.';
+  static const actionFailed = 'The action did not work.';
+
   static String teamAssigned(String team) => 'Team: $team';
   static const noTeamYet = 'No team assigned yet';
   static const noPosition = 'No position given';
