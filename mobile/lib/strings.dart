@@ -283,6 +283,29 @@ class S {
   static const shelterLoadFailed = 'The shelter could not be loaded.';
   static const actionFailed = 'The action did not work.';
 
+  // Shelter form
+  static const newShelterTitle = 'New shelter';
+  static const editShelterTitle = 'Edit shelter';
+  static const newShelterButton = 'New shelter';
+  static const editShelter = 'Edit';
+  static const createShelter = 'Create shelter';
+  static const saveChanges = 'Save changes';
+  static const selectPlaceholder = '-- select --';
+  static const owningOrganizationLabel = 'Owning organization';
+  static const shelterNameLabel = 'Name';
+  static const shelterCapacityLabel = 'Capacity';
+  static const districtSelectRequired = 'Select a district';
+  static const organizationSelectRequired = 'Select an owning organization';
+  static const shelterNameRequired = 'Enter a name';
+  static const capacityRequired = 'Enter a capacity';
+  static const capacityPositive = 'Capacity must be positive';
+  static const districtFixedHelp = 'The district is fixed after creation.';
+  static const organizationFixedHelp = 'The organization is fixed after creation.';
+  static String capacityCheckedInHelp(int n) =>
+      n == 1 ? '1 person is checked in now.' : '$n people are checked in now.';
+  static const formLoadFailed = 'The form could not be loaded.';
+  static const formCheckFields = 'Check the fields marked in red.';
+
   static String teamAssigned(String team) => 'Team: $team';
   static const noTeamYet = 'No team assigned yet';
   static const noPosition = 'No position given';

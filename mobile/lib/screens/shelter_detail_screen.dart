@@ -12,6 +12,7 @@ import '../widgets/ops_chips.dart';
 import '../widgets/report_card.dart';
 import '../widgets/section_card.dart';
 import '../widgets/state_views.dart';
+import 'shelter_form_screen.dart';
 
 /// One shelter: its status and occupancy, close or reopen, check someone in, and the people checked in now.
 class ShelterDetailScreen extends StatelessWidget {
@@ -77,6 +78,14 @@ class _ShelterDetailViewState extends State<_ShelterDetailView> {
     }
   }
 
+  Future<void> _edit(ShelterDetailController controller, Shelter shelter) async {
+    final saved = await Navigator.of(context)
+        .push<bool>(MaterialPageRoute<bool>(builder: (_) => ShelterFormScreen(editing: shelter)));
+    if (saved == true && mounted) {
+      await controller.load();
+    }
+  }
+
   Future<void> _close(ShelterDetailController controller) async {
     final ok = await _confirm(title: S.closeShelterTitle, body: S.closeShelterBody, confirm: S.closeShelter);
     if (ok) {
@@ -121,7 +130,17 @@ class _ShelterDetailViewState extends State<_ShelterDetailView> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(detail?.shelter.name ?? widget.shelter.name, overflow: TextOverflow.ellipsis)),
+      appBar: AppBar(
+        title: Text(detail?.shelter.name ?? widget.shelter.name, overflow: TextOverflow.ellipsis),
+        actions: [
+          if (detail != null)
+            IconButton(
+              tooltip: S.editShelter,
+              onPressed: controller.busy ? null : () => _edit(controller, detail.shelter),
+              icon: const Icon(Icons.edit_outlined),
+            ),
+        ],
+      ),
       body: SafeArea(child: body),
     );
   }

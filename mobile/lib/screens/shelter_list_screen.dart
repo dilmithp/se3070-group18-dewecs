@@ -8,6 +8,7 @@ import '../widgets/filter_bar.dart';
 import '../widgets/shelter_card.dart';
 import '../widgets/state_views.dart';
 import 'shelter_detail_screen.dart';
+import 'shelter_form_screen.dart';
 
 /// Shelters: filter by status and district, see how full each one is, open one for its detail.
 class ShelterListScreen extends StatefulWidget {
@@ -46,6 +47,14 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
     }
   }
 
+  Future<void> _create() async {
+    final controller = context.read<SheltersController>();
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const ShelterFormScreen()));
+    if (mounted) {
+      controller.refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<SheltersController>();
@@ -75,7 +84,7 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
     } else {
       content = ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: 88),
         children: [
           if (error != null)
             InfoBanner(
@@ -95,7 +104,7 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
       );
     }
 
-    return Column(
+    final column = Column(
       children: [
         if (controller.loaded || controller.districts.isNotEmpty)
           FilterBar(
@@ -123,6 +132,15 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
           ),
         ),
       ],
+    );
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: column,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _create,
+        icon: const Icon(Icons.add),
+        label: const Text(S.newShelterButton),
+      ),
     );
   }
 }
