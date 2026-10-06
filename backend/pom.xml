@@ -14,6 +14,7 @@
     <groupId>com.group18.dewecs</groupId>
     <artifactId>dewecs</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>war</packaging>
     <name>dewecs</name>
     <description>DEWECS - Smart Disaster Early-Warning and Emergency Coordination System backend</description>
 

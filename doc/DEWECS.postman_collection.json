@@ -1,0 +1,1339 @@
+{
+  "info": {
+    "name": "DEWECS Backend",
+    "description": "Server-rendered Spring MVC endpoints (Thymeleaf). Responses are HTML or 302 redirects, not JSON. No auth/CSRF yet. Disable 'Automatically follow redirects' in Postman settings to see flash redirects.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "id",
+      "value": "1"
+    },
+    {
+      "key": "occupantId",
+      "value": "1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard"
+              ]
+            },
+            "description": "Also served at /"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ground Reports",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ground-reports?status=PENDING_REVIEW&districtId=1&category=FLOOD",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ground-reports"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING_REVIEW",
+                  "disabled": true
+                },
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "FLOOD",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ground-reports/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ground-reports",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Mark reviewed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ground-reports/{{id}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ground-reports",
+                "{{id}}",
+                "review"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "reviewingUserId",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Action",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ground-reports/{{id}}/action",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ground-reports",
+                "{{id}}",
+                "action"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "reviewingUserId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "Team dispatched",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dismiss",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ground-reports/{{id}}/dismiss",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ground-reports",
+                "{{id}}",
+                "dismiss"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "reviewingUserId",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Warnings",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings?status=DRAFT&districtId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "DRAFT",
+                  "disabled": true
+                },
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "New form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "new"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings"
+              ]
+            },
+            "description": "Channels: SMS, EMAIL, RADIO, TV, SIREN, APP_PUSH, SOCIAL_MEDIA (repeat key for multiple). Severity: LOW, MODERATE, HIGH, CRITICAL",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "hazardEventId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "issuedByUserId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "severity",
+                  "value": "HIGH",
+                  "type": "text"
+                },
+                {
+                  "key": "message",
+                  "value": "Flood warning",
+                  "type": "text"
+                },
+                {
+                  "key": "expiresAt",
+                  "value": "2026-12-31T18:00",
+                  "type": "text"
+                },
+                {
+                  "key": "broadcastChannels",
+                  "value": "SMS",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Edit form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}/edit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}",
+                "edit"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "hazardEventId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "issuedByUserId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "severity",
+                  "value": "CRITICAL",
+                  "type": "text"
+                },
+                {
+                  "key": "message",
+                  "value": "Updated message",
+                  "type": "text"
+                },
+                {
+                  "key": "expiresAt",
+                  "value": "2026-12-31T18:00",
+                  "type": "text"
+                },
+                {
+                  "key": "broadcastChannels",
+                  "value": "EMAIL",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Publish",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}",
+                "publish"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Retract",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}/retract",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}",
+                "retract"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shelters",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters?status=OPEN&districtId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OPEN",
+                  "disabled": true
+                },
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "New form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "new"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "organizationId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Central School Shelter",
+                  "type": "text"
+                },
+                {
+                  "key": "capacity",
+                  "value": "200",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Edit form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/edit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "edit"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "organizationId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Central School Shelter",
+                  "type": "text"
+                },
+                {
+                  "key": "capacity",
+                  "value": "250",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Close",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "close"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Reopen",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/reopen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "reopen"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Check in occupant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/check-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "check-in"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "fullName",
+                  "value": "Nimal Perera",
+                  "type": "text"
+                },
+                {
+                  "key": "nic",
+                  "value": "199012345678",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Check out occupant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/check-out/{{occupantId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "check-out",
+                "{{occupantId}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rescue Requests",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests?status=PENDING&priority=HIGH&districtId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "HIGH",
+                  "disabled": true
+                },
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "New form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests/new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests",
+                "new"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests"
+              ]
+            },
+            "description": "Priority: LOW, MODERATE, HIGH, CRITICAL",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "requesterName",
+                  "value": "Kamal Silva",
+                  "type": "text"
+                },
+                {
+                  "key": "requesterPhone",
+                  "value": "0771234567",
+                  "type": "text"
+                },
+                {
+                  "key": "gpsLat",
+                  "value": "6.9271",
+                  "type": "text"
+                },
+                {
+                  "key": "gpsLng",
+                  "value": "79.8612",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Family stranded on roof",
+                  "type": "text"
+                },
+                {
+                  "key": "priority",
+                  "value": "CRITICAL",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Assign team",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests/{{id}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests",
+                "{{id}}",
+                "assign"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "teamId",
+                  "value": "1",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Complete",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests/{{id}}/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests",
+                "{{id}}",
+                "complete"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Cancel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/rescue-requests/{{id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "rescue-requests",
+                "{{id}}",
+                "cancel"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Relief Supplies",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies?type=FOOD&districtId=1&lowStockOnly=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "FOOD",
+                  "disabled": true
+                },
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "lowStockOnly",
+                  "value": "false",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "New form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies/new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies",
+                "new"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies"
+              ]
+            },
+            "description": "Type: FOOD, WATER, MEDICAL_SUPPLIES, SHELTER_MATERIALS, EQUIPMENT, FUEL, OTHER",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "organizationId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Rice 50kg bags",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "FOOD",
+                  "type": "text"
+                },
+                {
+                  "key": "unit",
+                  "value": "kg",
+                  "type": "text"
+                },
+                {
+                  "key": "quantity",
+                  "value": "500",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Edit form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies/{{id}}/edit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies",
+                "{{id}}",
+                "edit"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies",
+                "{{id}}"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "districtId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "organizationId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "name",
+                  "value": "Rice 50kg bags",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "FOOD",
+                  "type": "text"
+                },
+                {
+                  "key": "unit",
+                  "value": "kg",
+                  "type": "text"
+                },
+                {
+                  "key": "quantity",
+                  "value": "600",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relief-supplies/{{id}}/restock",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-supplies",
+                "{{id}}",
+                "restock"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "quantity",
+                  "value": "100",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Relief Distributions",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-distributions?status=PREPARING&shelterId=1&resourceId=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-distributions"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PREPARING",
+                  "disabled": true
+                },
+                {
+                  "key": "shelterId",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "resourceId",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Status: PREPARING, DISPATCHED, IN_TRANSIT, DELIVERED, CANCELLED"
+          }
+        },
+        {
+          "name": "New form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-distributions/new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-distributions",
+                "new"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/relief-distributions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-distributions"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "resourceId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "shelterId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "quantity",
+                  "value": "50",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-distributions/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-distributions",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Deliver",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-distributions/{{id}}/deliver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-distributions",
+                "{{id}}",
+                "deliver"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Cancel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/relief-distributions/{{id}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "relief-distributions",
+                "{{id}}",
+                "cancel"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    }
+  ]
+}
