@@ -14,6 +14,7 @@ import 'location_service.dart';
 import 'photo_picker.dart';
 import 'reference_data_controller.dart';
 import 'reports_controller.dart';
+import 'rescue_requests_controller.dart';
 import 'url_opener.dart';
 import 'settings_controller.dart';
 import 'shelters_controller.dart';
@@ -27,6 +28,7 @@ class AppDependencies {
     required this.sync,
     required this.reports,
     required this.shelters,
+    required this.rescue,
     required this.opener,
     required this.photos,
     required this.location,
@@ -39,6 +41,7 @@ class AppDependencies {
   final SyncService sync;
   final ReportsController reports;
   final SheltersController shelters;
+  final RescueRequestsController rescue;
   final UrlOpener opener;
   final PhotoStore photos;
   final LocationService location;
@@ -71,6 +74,7 @@ class AppDependencies {
     );
     final reports = ReportsController(store, api, identity, sync);
     final shelters = SheltersController(() => settings.operations);
+    final rescue = RescueRequestsController(() => settings.operations);
     // After a new identification (for example after a server reset) unsent reports move to the new citizen.
     identity.onIdentified = (citizen) async {
       await sync.adoptCitizen(citizen.id);
@@ -81,7 +85,8 @@ class AppDependencies {
       ..registerClearable(reference)
       ..registerClearable(sync)
       ..registerClearable(reports)
-      ..registerClearable(shelters);
+      ..registerClearable(shelters)
+      ..registerClearable(rescue);
     return AppDependencies._(
       settings: settings,
       identity: identity,
@@ -89,6 +94,7 @@ class AppDependencies {
       sync: sync,
       reports: reports,
       shelters: shelters,
+      rescue: rescue,
       opener: opener ?? launchExternally,
       photos: photos,
       location: location ?? GeolocatorLocationService(),
@@ -119,6 +125,7 @@ class AppDependencies {
         ChangeNotifierProvider<SyncService>.value(value: sync),
         ChangeNotifierProvider<ReportsController>.value(value: reports),
         ChangeNotifierProvider<SheltersController>.value(value: shelters),
+        ChangeNotifierProvider<RescueRequestsController>.value(value: rescue),
       ],
       child: child,
     );

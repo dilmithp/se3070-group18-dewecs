@@ -306,6 +306,15 @@ class S {
   static const formLoadFailed = 'The form could not be loaded.';
   static const formCheckFields = 'Check the fields marked in red.';
 
+  // Rescue request list
+  static String rescueCount(int n) => n == 1 ? '1 rescue request' : '$n rescue requests';
+  static const rescueEmptyTitle = 'No rescue requests yet';
+  static const rescueEmptyBody = 'Requests entered by the officers will appear here.';
+  static const rescueEmptyFilteredTitle = 'No rescue requests match';
+  static const rescueEmptyFilteredBody = 'Try another status, priority or district.';
+  static const rescueLoadFailed = 'The rescue requests could not be loaded.';
+  static const rescueShowingLast = 'Offline - showing the last list received';
+
   static String teamAssigned(String team) => 'Team: $team';
   static const noTeamYet = 'No team assigned yet';
   static const noPosition = 'No position given';
