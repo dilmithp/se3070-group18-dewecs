@@ -315,6 +315,30 @@ class S {
   static const rescueLoadFailed = 'The rescue requests could not be loaded.';
   static const rescueShowingLast = 'Offline - showing the last list received';
 
+  // Rescue request detail
+  static const rescueDetailTitle = 'Rescue request';
+  static const rescueFieldStatus = 'Status';
+  static const rescueFieldPriority = 'Priority';
+  static const rescueFieldRegion = 'Region';
+  static const rescueFieldPhone = 'Requester phone';
+  static const rescueFieldGps = 'GPS';
+  static const rescueFieldDescription = 'Description';
+  static const rescueFieldTeam = 'Assigned team';
+  static const rescueFieldSubmitted = 'Submitted at';
+  static const rescueFieldAssigned = 'Assigned at';
+  static const rescueFieldCompleted = 'Completed at';
+  static const notGiven = '—';
+  static const assignTitle = 'Assign a team';
+  static const assignTeamLabel = 'Team';
+  static const assignButton = 'Assign';
+  static const noTeamAvailable = 'No team is available right now.';
+  static const completeRequest = 'Complete';
+  static const cancelRequest = 'Cancel request';
+  static const cancelRequestTitle = 'Cancel this rescue request?';
+  static const cancelRequestBody = 'An assigned team becomes available again.';
+  static const keepRequest = 'Keep it';
+  static const rescueLoadOneFailed = 'The rescue request could not be loaded.';
+
   static String teamAssigned(String team) => 'Team: $team';
   static const noTeamYet = 'No team assigned yet';
   static const noPosition = 'No position given';

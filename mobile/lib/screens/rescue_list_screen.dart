@@ -7,12 +7,14 @@ import '../strings.dart';
 import '../widgets/filter_bar.dart';
 import '../widgets/rescue_card.dart';
 import '../widgets/state_views.dart';
+import 'rescue_detail_screen.dart';
 
 /// Rescue requests: filter by status, priority and district, see who is waiting for a team, open one for its detail.
 class RescueListScreen extends StatefulWidget {
   const RescueListScreen({super.key, this.onOpen});
 
-  /// Called when a request card is tapped.
+  /// Called when a request card is tapped. By default the detail screen opens, and the list is fetched again when
+  /// the user comes back, because assigning, completing or cancelling changes what the cards show.
   final void Function(RescueRequest request)? onOpen;
 
   @override
@@ -31,7 +33,18 @@ class _RescueListScreenState extends State<RescueListScreen> {
     });
   }
 
-  void _open(RescueRequest request) => widget.onOpen?.call(request);
+  Future<void> _open(RescueRequest request) async {
+    final onOpen = widget.onOpen;
+    if (onOpen != null) {
+      onOpen(request);
+      return;
+    }
+    final controller = context.read<RescueRequestsController>();
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RescueDetailScreen(request: request)));
+    if (mounted) {
+      controller.refresh();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
