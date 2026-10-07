@@ -12,10 +12,12 @@ import com.group18.dewecs.repository.GroundReportRepository;
 import com.group18.dewecs.repository.UserRepository;
 import com.group18.dewecs.service.GroundReportService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class GroundReportServiceImpl implements GroundReportService {
 
     private final GroundReportRepository groundReportRepository;
@@ -31,6 +33,7 @@ public class GroundReportServiceImpl implements GroundReportService {
     }
 
     @Override
+    @Transactional
     public GroundReport markReviewed(Long reportId, Long reviewingUserId) {
         GroundReport report = findReport(reportId);
         if (report.getStatus() != GroundReportStatus.PENDING_REVIEW) {
@@ -42,6 +45,7 @@ public class GroundReportServiceImpl implements GroundReportService {
     }
 
     @Override
+    @Transactional
     public GroundReport action(Long reportId, Long reviewingUserId, String note) {
         GroundReport report = findReport(reportId);
         if (report.getStatus() != GroundReportStatus.VERIFIED) {
@@ -57,6 +61,7 @@ public class GroundReportServiceImpl implements GroundReportService {
     }
 
     @Override
+    @Transactional
     public GroundReport dismiss(Long reportId, Long reviewingUserId) {
         GroundReport report = findReport(reportId);
         if (report.getStatus() == GroundReportStatus.ACTIONED || report.getStatus() == GroundReportStatus.REJECTED) {

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Something went wrong</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: nav}"></div>
+
+<h1><span th:text="${status}">500</span> &mdash; <span th:text="${error}">Error</span></h1>
+
+<p class="flash-error" th:text="${message}">Something went wrong.</p>
+
+<p>
+    <a href="javascript:history.back()">Go back</a> |
+    <a th:href="@{/dashboard}">Back to the dashboard</a>
+</p>
+</body>
+</html>

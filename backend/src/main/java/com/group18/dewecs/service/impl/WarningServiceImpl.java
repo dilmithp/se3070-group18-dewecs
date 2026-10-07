@@ -15,6 +15,7 @@ import com.group18.dewecs.repository.UserRepository;
 import com.group18.dewecs.repository.WarningRepository;
 import com.group18.dewecs.service.WarningService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -23,6 +24,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class WarningServiceImpl implements WarningService {
 
     private final WarningRepository warningRepository;
@@ -41,6 +43,7 @@ public class WarningServiceImpl implements WarningService {
     }
 
     @Override
+    @Transactional
     public Warning createDraft(Long hazardEventId, String severity, String message, LocalDateTime expiresAt,
                                 Set<String> broadcastChannels, Long issuedByUserId) {
         HazardEvent hazardEvent = findHazardEvent(hazardEventId);
@@ -60,6 +63,7 @@ public class WarningServiceImpl implements WarningService {
     }
 
     @Override
+    @Transactional
     public Warning updateDraft(Long warningId, String severity, String message, LocalDateTime expiresAt,
                                 Set<String> broadcastChannels) {
         Warning warning = findWarning(warningId);
@@ -74,6 +78,7 @@ public class WarningServiceImpl implements WarningService {
     }
 
     @Override
+    @Transactional
     public Warning publish(Long warningId) {
         Warning warning = findWarning(warningId);
         requireDraft(warning);
@@ -91,6 +96,7 @@ public class WarningServiceImpl implements WarningService {
     }
 
     @Override
+    @Transactional
     public Warning retract(Long warningId) {
         Warning warning = findWarning(warningId);
         if (warning.getStatus() != WarningStatus.DRAFT && warning.getStatus() != WarningStatus.ISSUED) {
@@ -101,12 +107,14 @@ public class WarningServiceImpl implements WarningService {
     }
 
     @Override
+    @Transactional
     public Warning getById(Long warningId) {
         expireOverdue();
         return findWarning(warningId);
     }
 
     @Override
+    @Transactional
     public List<Warning> list(WarningStatus statusFilter, Long districtId) {
         expireOverdue();
 

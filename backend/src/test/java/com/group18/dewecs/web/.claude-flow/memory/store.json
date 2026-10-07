@@ -1,0 +1,14 @@
+{
+  "entries": {
+    "cmd-1791360029743": {
+      "key": "cmd-1791360029743",
+      "value": "{\"command\":\"cd /c/Users/dilmithp/Downloads/Dilmith/projects/se3070-group18-dewecs/backend/src/test/java/com/group18/dewecs/web && cat > ApiTestSupport.java <<'PYEOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-07T08:00:29.743Z",
+      "lastAccessed": "2026-10-07T08:00:29.743Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-06T08:00:29.743Z"
+    }
+  },
+  "version": "3.0.0"
+}

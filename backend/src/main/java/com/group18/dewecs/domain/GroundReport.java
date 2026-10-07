@@ -40,9 +40,11 @@ public class GroundReport {
     private String photoUrl;
 
     @NotNull
+    @Column(precision = 10, scale = 7)
     private BigDecimal gpsLat;
 
     @NotNull
+    @Column(precision = 10, scale = 7)
     private BigDecimal gpsLng;
 
     @Column(length = 2000)

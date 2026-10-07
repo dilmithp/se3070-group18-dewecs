@@ -1,0 +1,23 @@
+{
+  "entries": {
+    "cmd-1791360255041": {
+      "key": "cmd-1791360255041",
+      "value": "{\"command\":\"cd /c/Users/dilmithp/Downloads/Dilmith/projects/se3070-group18-dewecs/backend/src/main/resources && grep -n -i \\\"photo\\\" -B1 -A1 templates/ground-reports/detail.html; tail -5 static/css/style.css; file static/css/style.css templates/ground-reports/detail.html | cut -c1-110\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-07T08:04:15.041Z",
+      "lastAccessed": "2026-10-07T08:04:15.041Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-06T08:04:15.041Z"
+    },
+    "cmd-1791360268570": {
+      "key": "cmd-1791360268570",
+      "value": "{\"command\":\"py -I - <<'PYEOF'\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-07T08:04:28.570Z",
+      "lastAccessed": "2026-10-07T08:04:28.570Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-06T08:04:28.570Z"
+    }
+  },
+  "version": "3.0.0"
+}

@@ -1,0 +1,14 @@
+{
+  "entries": {
+    "cmd-1791359859992": {
+      "key": "cmd-1791359859992",
+      "value": "{\"command\":\"mkdir -p doc/api-samples && cd doc/api-samples &&\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-07T07:57:39.992Z",
+      "lastAccessed": "2026-10-07T07:57:39.992Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-06T07:57:39.992Z"
+    }
+  },
+  "version": "3.0.0"
+}

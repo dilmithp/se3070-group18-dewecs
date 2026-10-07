@@ -13,12 +13,14 @@ import com.group18.dewecs.repository.RescueRequestRepository;
 import com.group18.dewecs.repository.RescueTeamRepository;
 import com.group18.dewecs.service.RescueRequestService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class RescueRequestServiceImpl implements RescueRequestService {
 
     private final RescueRequestRepository rescueRequestRepository;
@@ -34,6 +36,7 @@ public class RescueRequestServiceImpl implements RescueRequestService {
     }
 
     @Override
+    @Transactional
     public RescueRequest submit(Long districtId, String requesterName, String requesterPhone, BigDecimal gpsLat,
                                  BigDecimal gpsLng, String description, String priority) {
         District district = findDistrict(districtId);
@@ -53,6 +56,7 @@ public class RescueRequestServiceImpl implements RescueRequestService {
     }
 
     @Override
+    @Transactional
     public RescueRequest assign(Long requestId, Long teamId) {
         RescueRequest request = findRequest(requestId);
         if (request.getStatus() != RescueRequestStatus.PENDING) {
@@ -75,6 +79,7 @@ public class RescueRequestServiceImpl implements RescueRequestService {
     }
 
     @Override
+    @Transactional
     public RescueRequest complete(Long requestId) {
         RescueRequest request = findRequest(requestId);
         if (request.getStatus() != RescueRequestStatus.ASSIGNED) {
@@ -89,6 +94,7 @@ public class RescueRequestServiceImpl implements RescueRequestService {
     }
 
     @Override
+    @Transactional
     public RescueRequest cancel(Long requestId) {
         RescueRequest request = findRequest(requestId);
         if (request.getStatus() != RescueRequestStatus.PENDING && request.getStatus() != RescueRequestStatus.ASSIGNED) {

@@ -137,3 +137,11 @@ form select, form textarea, form input {
     font-size: 0.85rem;
     color: #555;
 }
+
+.report-photo {
+    max-width: 320px;
+    width: 100%;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

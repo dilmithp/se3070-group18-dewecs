@@ -11,10 +11,12 @@ import com.group18.dewecs.repository.OrganizationRepository;
 import com.group18.dewecs.repository.ResourceRepository;
 import com.group18.dewecs.service.ReliefSupplyService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class ReliefSupplyServiceImpl implements ReliefSupplyService {
 
     private final ResourceRepository resourceRepository;
@@ -30,6 +32,7 @@ public class ReliefSupplyServiceImpl implements ReliefSupplyService {
     }
 
     @Override
+    @Transactional
     public Resource create(Long districtId, Long organizationId, String name, String type, String unit,
                             Integer initialQuantity) {
         District district = findDistrict(districtId);
@@ -51,6 +54,7 @@ public class ReliefSupplyServiceImpl implements ReliefSupplyService {
     }
 
     @Override
+    @Transactional
     public Resource update(Long resourceId, String name, String type, String unit) {
         Resource resource = findResource(resourceId);
         resource.setName(name);
@@ -60,6 +64,7 @@ public class ReliefSupplyServiceImpl implements ReliefSupplyService {
     }
 
     @Override
+    @Transactional
     public Resource restock(Long resourceId, Integer additionalQuantity) {
         Resource resource = findResource(resourceId);
         if (additionalQuantity == null || additionalQuantity <= 0) {

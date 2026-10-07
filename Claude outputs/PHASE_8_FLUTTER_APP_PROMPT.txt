@@ -1,0 +1,131 @@
+PHASE 8 - FLUTTER GROUND-REPORTING APP (new folder mobile/)
+
+CONTEXT
+SE3070 Group 18 DEWECS, a disaster early-warning and emergency coordination system for Sri Lanka. The Spring Boot backend in backend/ (officer web dashboards) is done. The fifth use case is ground hazard reporting: a citizen's phone app. You are building that app as a Flutter project in mobile/ of this repo, against the REST contract below (Phase 7 implements it in backend/; it may or may not be in the working tree yet).
+Use this prompt only if I am the one building the app. Stage 0 checks that nobody else has already started one.
+Goal: a working, demonstrable app for Assignment 02 (due Fri 9 Oct 2026, 11:59 PM) that behaves well with poor connectivity, because that is the real situation in a disaster.
+What it does: the citizen identifies once (NIC, name, phone, district), then reports a hazard (category, description, GPS, optional photo). Reports are saved on the phone first and sent when a connection exists (offline-first, safe to retry). The citizen can follow the status of past reports while officers review them on the web dashboard.
+
+Read first: PROGRESS_NOTES.md in the repo root (section 2 for the project context, section 14 for the viva cheat-sheet you will extend) and, if they exist, doc/MOBILE_API.md and doc/api-samples/.
+
+=== DEWECS MOBILE API - CONTRACT v1 (frozen: Phase 7 implements it, Phase 8 consumes it) ===
+
+GENERAL
+- Base path /api/v1. JSON in and out, UTF-8. No authentication in v1 (known limitation: anyone who knows a NIC can report as that citizen).
+- Timestamps: ISO-8601 local date-time in Sri Lanka time (UTC+05:30, no daylight saving), no offset suffix, at most millisecond precision, for example 2026-10-07T14:03:11.123. Clients convert from UTC by adding 5 h 30 min.
+- Coordinates: JSON numbers, decimal degrees (WGS84). The server rounds to 7 decimals.
+- Errors: RFC 7807 problem JSON. Always present: status, title, detail. Bean-validation failures on body fields (400) also carry fieldErrors, an object of field name -> message. Other 400s (rules checked in the service: a NIC that is invalid after normalisation, a photo upload that is not allowed in the report's status, an unsupported, empty or over-5-MB image) carry status, title and detail only. 413 appears only if the servlet container's multipart limit trips before the 5 MB check. Parse error bodies as JSON whatever media type they declare.
+- Report statuses: PENDING_SYNC, PENDING_REVIEW, VERIFIED, REJECTED, NEEDS_INFO, ACTIONED. A new report starts as PENDING_REVIEW. Clients must tolerate unknown values by showing them as raw text.
+
+REPORT OBJECT (returned by every report endpoint)
+  {"id":101,"citizenId":42,"districtId":1,"districtName":"Colombo","category":"FLOOD",
+   "description":"River is overflowing near the bridge","gpsLat":6.9271234,"gpsLng":79.8612345,
+   "photoUrl":null,"status":"PENDING_REVIEW","actionNote":null,"submittedAt":"2026-10-07T14:03:11.123"}
+- photoUrl is null, or a path starting with /api/v1/photos/ (prepend the server base URL), or (legacy rows only) any other text, which clients treat as "no displayable photo".
+- actionNote is non-null only when status is ACTIONED. No reviewer names, phone numbers or other personal data are ever returned.
+
+ENDPOINTS
+1. GET /api/v1/reference-data
+   200 {"districts":[{"id":1,"name":"Colombo"}],"categories":["FLOOD","LANDSLIDE","CYCLONE","DROUGHT"]}
+   Districts are sorted by name (case-insensitive); categories are the HazardType values.
+
+2. POST /api/v1/citizens/identify
+   body {"nic":"199012345678","fullName":"Nimal Perera","phone":"0771234567","districtId":1}
+   201 when a citizen was created, 200 when the NIC already existed (stored name, phone and district are never overwritten).
+   response {"id":42,"fullName":"Nimal Perera","districtId":1,"districtName":"Colombo","created":true}
+   Rules: nic is trimmed, upper-cased and must match ^(\d{9}[VX]|\d{12})$ (old 9-digit-plus-letter or new 12-digit Sri Lankan NIC); fullName is trimmed, 1-120 characters, not blank; phone matches ^\+?[0-9][0-9 -]{7,14}$ ; districtId must exist (404 otherwise).
+
+3. POST /api/v1/ground-reports
+   body {"citizenId":42,"districtId":1,"category":"FLOOD","description":"River is overflowing near the bridge",
+         "gpsLat":6.9271234,"gpsLng":79.8612345,"capturedAt":"2026-10-07T14:03:11.123"}
+   201 + Location header /api/v1/ground-reports/101 + report object. photoUrl cannot be set here.
+   200 + the stored report, unchanged, when a report with the same citizenId, category and capturedAt already exists (idempotent replay, so retries are safe).
+   Rules: citizenId, districtId, category, description, gpsLat, gpsLng are required; capturedAt is optional (default: now, which also means no replay detection); category is one of the reference-data categories (case-insensitive); description is trimmed, 1-2000 characters; gpsLat -90..90; gpsLng -180..180 (deliberately no Sri Lanka bounding box: emulators default to California); capturedAt may not be later than the server's now + 5 minutes; submittedAt = capturedAt when given. Unknown citizenId or districtId -> 404.
+
+4. POST /api/v1/ground-reports/{id}/photo
+   multipart/form-data with one part named file: JPEG, PNG or WebP (checked by content, not by the client's Content-Type), 1 byte to 5 MB.
+   200 + report object with photoUrl set. Uploading again replaces the photo. Allowed only while the status is PENDING_SYNC, PENDING_REVIEW or NEEDS_INFO (otherwise 400). Unknown id -> 404.
+
+5. GET /api/v1/ground-reports/{id}
+   200 report object, or 404.
+
+6. GET /api/v1/citizens/{id}/ground-reports?page=0&size=20
+   200 {"items":[report objects],"page":0,"size":20,"totalItems":57,"totalPages":3}, newest first (submittedAt desc, id desc). A page below 0 becomes 0; size is clamped to 1..50 (default 20). Unknown citizen -> 404.
+
+7. GET /api/v1/photos/{filename}
+   200 image bytes with the matching image/* type, Cache-Control public with max-age one day, X-Content-Type-Options nosniff. Filenames are server-generated (a UUID plus .jpg, .png or .webp); any other name -> 404.
+
+CLIENT RULES (for the Flutter app)
+- Create capturedAt once, when the user taps Submit, and resend the identical value on every retry.
+- POST /ground-reports answering 200 or 201 means the report is stored. Then upload the photo, if any. A failed photo upload never undoes the report.
+- Retry later on: network error, timeout, 5xx, 408, 429. Do not retry automatically (needs the user): 400, 404, 405, 413, 415 and every other status.
+- Responses carry no charset: decode the body bytes as UTF-8 (never as Latin-1) and send requests as UTF-8 with Content-Type application/json.
+- Addresses of the dev machine: Android emulator http://10.0.2.2:8080 ; physical phone http://<laptop LAN IP>:8080 ; or run adb reverse tcp:8080 tcp:8080 and use http://localhost:8080.
+=== END OF CONTRACT v1 ===
+
+HARD RULES
+1. Work only inside mobile/ (plus PROGRESS_NOTES.md). Do not edit backend/, doc/ or the Postman files. If the contract looks wrong or incomplete, stop and tell me.
+2. The app talks to the Spring backend over HTTP only. It never contains database credentials or the Neon host and never connects to a database. Do not print or commit credentials; scan mobile/ for secrets at the end. No Google Maps and no Firebase (they need API keys).
+3. No code generation (no build_runner, freezed or json_serializable): plain Dart classes with fromJson and toJson. Allowed packages: http, http_parser, provider, shared_preferences, geolocator, image_picker, path_provider, path, connectivity_plus, url_launcher, intl, cupertino_icons (added by flutter create) and flutter_lints (dev). Anything else: ask first.
+4. Keep it simple enough to explain in a viva: Provider + ChangeNotifier, small files, no clever abstractions. Every user-visible string lives in one strings.dart (English only; do not implement Sinhala or Tamil).
+5. flutter analyze must report zero issues and flutter test must be green at the end of every stage. Fix lints, do not suppress them.
+6. Do not commit or push. Never run git checkout, switch, stash, reset, clean, restore or rebase: earlier phases may be uncommitted in the working tree. Do not run flutter upgrade. Do not install SDKs yourself: if Flutter, the Android toolchain or the Android licences are missing, stop and tell me what to install.
+7. At the end of each stage append 2-3 lines to a "Phase 8 log" section at the bottom of PROGRESS_NOTES.md (if that file is missing, use mobile/PHASE8_LOG.md).
+8. Do not reformat or re-save files you do not need to change. Save git status --short in Stage 0; at the end, compared with that, only mobile/ and PROGRESS_NOTES.md may have changed.
+9. If you start the backend or any other process, start it in the background with its PID kept and stop it by that PID (on Windows: taskkill /PID <pid> /T /F); never kill processes by image name (java.exe, dart.exe, adb.exe), because IntelliJ, Android Studio and the emulator may be running.
+
+STAGE 0 - CHECK AND PLAN
+Reply with a plan of at most 15 lines and WAIT for my OK. First find out:
+- flutter --version, flutter doctor -v and flutter devices. Tell me which targets can run (Android emulator or phone, Chrome, Windows desktop) and what is missing.
+- git status --short (keep it), then git fetch and a read-only look at every remote branch (git branch -r, git ls-tree -r origin/<branch>, git grep pubspec origin/<branch>) and at the working tree for an existing Flutter project (pubspec.yaml, a mobile/ or app/ folder). If one exists, STOP and show me; I decide whether to extend it.
+- Whether the Phase 7 API is in backend/ (controller/api, doc/MOBILE_API.md). If doc/MOBILE_API.md exists and differs from the contract above, list the differences; the doc wins only if I say so.
+- Ask me which platforms to create. Default: android only. Add web only if I say so (it needs the backend's optional CORS property and cannot keep queued photos across a reload).
+
+STAGE 1 - SKELETON
+flutter create --org com.group18 --project-name dewecs_mobile --platforms <chosen> mobile. Material 3, light and dark following the system, a restrained palette for an emergency app (strong contrast, no decorative gradients), app name "DEWECS Report". Folders under lib/: config, models, api, storage, sync, state, screens, widgets, plus strings.dart. Navigation: Home (my reports), New report, Settings. Replace the generated counter test. Android: INTERNET, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION and <queries> entries for the https and geo VIEW intents (url_launcher on Android 11+) in the main manifest; cleartext HTTP (android:usesCleartextTraffic) only in android/app/src/debug/AndroidManifest.xml. Check that the generated .gitignore keeps build output and local.properties out of git.
+
+STAGE 2 - API LAYER, MODELS, FAKE SERVER
+- Models for the contract (District, ReferenceData, Citizen, GroundReport, ReportPage, ApiProblem) with fromJson and toJson. Unknown status strings must survive: keep the raw string and map to a label only for display.
+- abstract class DewecsApi with one method per endpoint. HttpDewecsApi on package:http: base URL from settings, 15 s timeout (60 s for the photo upload), requests sent as UTF-8 JSON, every response decoded with utf8.decode(response.bodyBytes) and never with response.body (Spring sends application/json without a charset, so package:http would decode it as Latin-1 and garble Sinhala text), multipart upload for the photo, all failures mapped to one ApiException (kind: network, timeout, server or client; status; detail; fieldErrors) with a retryable getter that follows CLIENT RULES exactly.
+- FakeDewecsApi implements the same interface in memory: 4 districts, 400 ms latency, replay detection on citizenId + category + capturedAt, photo attach, a few seeded reports in different statuses including ACTIONED with a note, and switches to force a network failure or a 500 so offline behaviour can be demonstrated. The Demo mode switch in Settings selects it. Demo mode is off by default. Switching it in either direction asks for confirmation and clears the stored identity, the queue, the cached reference data and the cached reports (fake ids must never reach the real backend).
+- The pure-Dart layer (models + api) must not import Flutter, so it can be run with dart run.
+- A time helper: now in Sri Lanka time (UTC+05:30) formatted exactly as the contract says (milliseconds, no offset).
+- Tests: JSON parsing against fixtures (copy doc/api-samples/*.json into mobile/test/fixtures/ if they exist; otherwise write fixtures from the contract text and say so), HttpDewecsApi with MockClient from package:http/testing.dart (success, 4xx with fieldErrors, 5xx, timeout, malformed body; assert the method, the path, Content-Type application/json, the multipart field name file and the exact capturedAt string; include a Sinhala description and an em dash), FakeDewecsApi behaviour, the time helper.
+
+STAGE 3 - SETTINGS, REFERENCE DATA, IDENTITY
+- Settings: API base URL (default http://10.0.2.2:8080 on Android, http://localhost:8080 elsewhere; validated; persisted), a Test connection button (calls reference-data and shows the district count or a readable error), the Demo mode switch.
+- Reference data is cached after every successful fetch and used offline.
+- Identify screen (first run, and "Identify again" in Settings): NIC, full name, phone, district dropdown. Client-side validation mirrors the contract rules exactly (validators in one file, with tests). Calls identify and stores the returned citizen id, name and district locally; do not store the NIC after identification. Offline: show a clear message and keep the form (identifying needs one successful call).
+- Home and New report require an identified citizen, otherwise they route to Identify.
+
+STAGE 4 - NEW REPORT, OFFLINE QUEUE, SYNC (the core of the app)
+Report form: category choice chips (from the cached reference data) with icons, description (multiline, counter up to 2000), district (defaults to the citizen's), location, optional photo.
+- Location: a "Use my location" button with geolocator (permission flow with clear messages for denied, denied forever and location services off; 10 s timeout; falls back to the last known position), shows lat, lng and accuracy; manual latitude and longitude fields as the fallback (validated -90..90 and -180..180). No Sri Lanka bounding box (the emulator sits in California).
+- Photo: camera or gallery through image_picker with maxWidth 1600 and imageQuality 80 (far below the 5 MB limit); preview and remove. On Android copy the picked file into the app documents folder so it survives while the report waits in the queue. Put this behind a small PhotoStore interface (file-based on mobile; in-memory on web if web was chosen).
+- Submit: validate, set capturedAt once (Sri Lanka time), create a QueuedReport (local id, all fields, photo path, state QUEUED), persist it immediately, trigger a sync, go back to Home with a clear message ("Saved on this phone" or "Sent"). Double taps must not create two items.
+Queue and sync engine (sync/): QueueRepository persists a JSON list in shared_preferences. SyncService has a single-flight lock and processes the oldest item first: submitReport; on 200 or 201 store the server id; then uploadPhoto if there is one; then mark the item SYNCED. SENDING is never persisted: on app start any SENDING item becomes QUEUED.
+- Retryable errors (ApiException.retryable) keep the item QUEUED with an attempt counter and next-attempt time (backoff 5 s, 15 s, 60 s, 5 min, then every 5 min). After a 5xx, 408 or 429 continue with the next item; stop the whole run only on a network error or timeout (the connection is down). A photo failure never undoes the report: retry it separately; a permanent photo error (400, 404, 413, 415) leaves the item SYNCED with a visible "photo could not be sent" note.
+- Permanent errors on submit (400, 405, 413, 415 and any other status that is neither retryable nor the 404 case below) move the item to NEEDS_ATTENTION and show the server's detail and fieldErrors; the user can Edit and retry (this resets capturedAt to now, which is safe because nothing was stored) or Delete.
+- A 404 on submit: fetch the reference data (if that fetch fails, keep the item QUEUED and retry later). If the report's districtId is still listed, the citizen is unknown (the server database was reset): clear the stored identity, route to Identify, keep the queue and rewrite citizenId on the queued items after the new identification. If the district is gone, move the item to NEEDS_ATTENTION with the server's detail. A 404 on the my-reports list triggers the same identity-reset flow. Settings shows the stored citizen's name and district, so the user can see who the app thinks they are.
+- Triggers: after Submit, on app start, on connectivity change (connectivity_plus), pull-to-refresh and a "Send now" button. No background service (state this limitation in the README).
+- The same capturedAt goes out on every retry, so a lost response can never create a duplicate.
+Tests: SyncService with FakeDewecsApi and an in-memory queue: success, offline then online, 500 then success, 400 permanent, replay (200), photo failure after report success, 404 identity reset, single-flight, backoff schedule, ordering; the QueuedReport state machine; the validators; a widget test for the form (empty submit shows errors; a valid submit enqueues exactly one item).
+
+STAGE 5 - MY REPORTS
+Home lists newest first: queued items first (chip per state: Waiting to send, Sending, Needs attention), then items that were sent but are not yet in the fetched server list (kept locally with their server id until a refresh returns that id; a "photo could not be sent" note shows on the detail screen), then server reports from GET /citizens/{id}/ground-reports with a Load more button (page size 20) and pull-to-refresh. Status chips with a label and a colour per status, text always present: PENDING_REVIEW "Waiting for review", VERIFIED "Reviewed by officers", ACTIONED "Action taken", REJECTED "Not accepted", NEEDS_INFO "More information needed", PENDING_SYNC "Waiting to send"; unknown values are shown as received. Cache the last fetched page so the list still shows offline, with an "Offline - showing saved data" banner. Detail screen: category, description, district, coordinates with an Open in maps button (url_launcher, a geo: URI, with an OpenStreetMap URL as fallback), submitted time, status, the officers' action note only when ACTIONED, and the photo (Image.network on base URL + photoUrl when it starts with /api/v1/photos/, a placeholder otherwise; for queued items show the local file).
+Tests: widget tests for the list (chips, empty state, offline banner) and the detail (action note only when ACTIONED), and the status label mapping.
+
+STAGE 6 - POLISH AND ROBUSTNESS
+Loading, empty and error states on every screen; SnackBars for outcomes; 48 dp tap targets; semantic labels on icon-only buttons; no overflow at 200 percent text scale (add a widget test); both themes; no hard-coded colours outside the theme; the app never crashes on malformed server data (show a readable error). A debug-only "Sync queue" screen listing each queued item with its state, attempts and last error is welcome, because it makes the offline demo easy to explain.
+
+STAGE 7 - REAL BACKEND CHECK AND DOCS
+- If the Phase 7 API is in backend/ and the Phase 6 local profile exists: start the backend with the local profile only (never a Neon datasource) on a spare port (--server.port=8092), then run a small mobile/tool/smoke.dart (pure Dart, uses HttpDewecsApi) against http://localhost:8092: reference-data, identify, submit, replay, photo upload (a tiny generated PNG), list. Report any mismatch with the contract. Stop the backend afterwards and make sure no java process you started is left running. If Phase 7 is not there, say so clearly in the final report: the app was verified against the fake server only.
+- mobile/README.md: what the app does, architecture (one paragraph and a folder list), setup (flutter doctor, flutter pub get), running on an emulator (http://10.0.2.2:8080), on a physical phone (laptop LAN IP and the Windows firewall for port 8080, or adb reverse tcp:8080 tcp:8080), Demo mode, how offline queueing and retries work, how to run the tests, cleartext HTTP (debug only; what to change for a release APK demo and why that is a trade-off), limitations (no background sync, no authentication so after a server reset the stored citizen id may point to a different person, no map tiles, English only, photos lost on web reload if web was chosen), and a note to check the phone's clock: a phone more than 5 minutes ahead of Sri Lanka time gets a permanent 400 that Edit and retry cannot fix (show the server's detail in that case).
+- PROGRESS_NOTES.md: a short "Mobile app" section (what exists, how to run it, test count, limitations) and viva cheat-sheet answers (section 14): why offline-first, how retries stay idempotent without a schema change, why capturedAt is created on the device, what Provider does here, what you would add next.
+- Final run of flutter analyze and flutter test. List the dependencies you added with a one-line reason each. Scan mobile/ for secrets.
+- Final report (max 25 lines): what works, verified how (fake only, or real backend), test count, dependencies added, decisions I should review, and what is left for me to do by hand.
+
+ASK ME FIRST (propose, do not implement): any package outside the allowed list; any change to the contract; background sync (WorkManager); Sinhala or Tamil; a map view; push notifications; web as a target if I did not choose it.
+
+WORKING STYLE
+After I approve the plan, run stages 1-7 in order. Pause only for an ask-first item or if a stage fails twice. After each stage give a 3-5 line summary. If time gets short, finish in this order: Stages 1, 2, 3, 4, 5, then the README and smoke run of Stage 7, then Stage 6. A smaller app that works end to end beats a bigger one that does not.

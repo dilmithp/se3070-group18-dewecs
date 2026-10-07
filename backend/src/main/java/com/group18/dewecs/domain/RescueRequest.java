@@ -39,8 +39,10 @@ public class RescueRequest {
     @JoinColumn(name = "district_id")
     private District district;
 
+    @Column(precision = 10, scale = 7)
     private BigDecimal gpsLat;
 
+    @Column(precision = 10, scale = 7)
     private BigDecimal gpsLng;
 
     @NotBlank

@@ -1,0 +1,215 @@
+{
+  "info": {
+    "name": "DEWECS Mobile API v1",
+    "description": "Contract v1 for the Flutter ground-reporting app. See doc/MOBILE_API.md. No authentication in v1.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "citizenId",
+      "value": "1"
+    },
+    {
+      "key": "reportId",
+      "value": "1"
+    },
+    {
+      "key": "photoFilename",
+      "value": "00000000-0000-0000-0000-000000000000.png"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 Reference data",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/reference-data",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "reference-data"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "2 Identify citizen",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/citizens/identify",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "citizens",
+            "identify"
+          ]
+        },
+        "description": "201 when created, 200 when the NIC already exists. Set the collection variable citizenId from the id in the response.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nic\": \"199012345678\",\n  \"fullName\": \"Nimal Perera\",\n  \"phone\": \"0771234567\",\n  \"districtId\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "3 Submit report",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ground-reports",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ground-reports"
+          ]
+        },
+        "description": "201 + Location. Send the same capturedAt again: 200 and the same report. Set reportId from the response.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"citizenId\": 1,\n  \"districtId\": 1,\n  \"category\": \"FLOOD\",\n  \"description\": \"River is overflowing near the bridge\",\n  \"gpsLat\": 6.9271234,\n  \"gpsLng\": 79.8612345,\n  \"capturedAt\": \"2026-10-07T14:03:11.123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "4 Upload photo",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ground-reports/{{reportId}}/photo",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ground-reports",
+            "{{reportId}}",
+            "photo"
+          ]
+        },
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "description": "Part name must be file. JPEG, PNG or WebP, 1 byte to 5 MB. Choose a file in Body > form-data."
+      }
+    },
+    {
+      "name": "5 Get report",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/ground-reports/{{reportId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "ground-reports",
+            "{{reportId}}"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "6 List citizen reports",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/citizens/{{citizenId}}/ground-reports?page=0&size=20",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "citizens",
+            "{{citizenId}}",
+            "ground-reports"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "20"
+            }
+          ]
+        },
+        "description": "Newest first. page below 0 becomes 0; size is clamped to 1..50."
+      }
+    },
+    {
+      "name": "7 Get photo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/photos/{{photoFilename}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "photos",
+            "{{photoFilename}}"
+          ]
+        },
+        "description": "photoFilename is the last segment of photoUrl from the upload response (a UUID plus .jpg, .png or .webp)."
+      }
+    }
+  ]
+}

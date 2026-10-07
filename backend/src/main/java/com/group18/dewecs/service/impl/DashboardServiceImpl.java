@@ -13,8 +13,10 @@ import com.group18.dewecs.repository.ShelterRepository;
 import com.group18.dewecs.repository.WarningRepository;
 import com.group18.dewecs.service.DashboardService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class DashboardServiceImpl implements DashboardService {
 
     private final WarningRepository warningRepository;

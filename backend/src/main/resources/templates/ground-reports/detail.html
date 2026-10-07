@@ -30,7 +30,12 @@
     <dd th:text="${report.gpsLat} + ', ' + ${report.gpsLng}"></dd>
 
     <dt>Photo</dt>
-    <dd th:text="${report.photoUrl} ?: '—'"></dd>
+    <dd>
+        <a th:if="${report.photoUrl != null and #strings.startsWith(report.photoUrl, '/api/v1/photos/')}" th:href="@{${report.photoUrl}}">
+            <img class="report-photo" th:src="@{${report.photoUrl}}" alt="Photo attached to this ground report">
+        </a>
+        <span th:unless="${report.photoUrl != null and #strings.startsWith(report.photoUrl, '/api/v1/photos/')}" th:text="${report.photoUrl} ?: '—'"></span>
+    </dd>
 
     <dt>Description</dt>
     <dd th:text="${report.description}"></dd>

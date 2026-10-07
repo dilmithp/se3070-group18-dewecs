@@ -13,11 +13,13 @@ import com.group18.dewecs.repository.ShelterOccupantRepository;
 import com.group18.dewecs.repository.ShelterRepository;
 import com.group18.dewecs.service.ShelterService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class ShelterServiceImpl implements ShelterService {
 
     private final ShelterRepository shelterRepository;
@@ -36,6 +38,7 @@ public class ShelterServiceImpl implements ShelterService {
     }
 
     @Override
+    @Transactional
     public Shelter create(Long districtId, Long organizationId, String name, Integer capacity) {
         District district = findDistrict(districtId);
         Organization organization = findOrganization(organizationId);
@@ -56,6 +59,7 @@ public class ShelterServiceImpl implements ShelterService {
     }
 
     @Override
+    @Transactional
     public Shelter update(Long shelterId, String name, Integer capacity) {
         Shelter shelter = findShelter(shelterId);
 
@@ -77,6 +81,7 @@ public class ShelterServiceImpl implements ShelterService {
     }
 
     @Override
+    @Transactional
     public Shelter close(Long shelterId) {
         Shelter shelter = findShelter(shelterId);
         shelter.setStatus(ShelterStatus.CLOSED);
@@ -84,6 +89,7 @@ public class ShelterServiceImpl implements ShelterService {
     }
 
     @Override
+    @Transactional
     public Shelter reopen(Long shelterId) {
         Shelter shelter = findShelter(shelterId);
         if (shelter.getStatus() != ShelterStatus.CLOSED) {
@@ -94,6 +100,7 @@ public class ShelterServiceImpl implements ShelterService {
     }
 
     @Override
+    @Transactional
     public ShelterOccupant checkIn(Long shelterId, String fullName, String nic) {
         Shelter shelter = findShelter(shelterId);
 
@@ -121,6 +128,7 @@ public class ShelterServiceImpl implements ShelterService {
     }
 
     @Override
+    @Transactional
     public void checkOut(Long shelterId, Long occupantId) {
         Shelter shelter = findShelter(shelterId);
         ShelterOccupant occupant = shelterOccupantRepository.findById(occupantId)

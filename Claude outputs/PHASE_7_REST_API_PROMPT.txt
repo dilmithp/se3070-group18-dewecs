@@ -1,0 +1,125 @@
+PHASE 7 - MOBILE REST API FOR GROUND REPORTING (backend only, no new use cases for officers)
+
+CONTEXT
+You are continuing the SE3070 Group 18 DEWECS backend (Spring Boot 3.5.16, Java 21, Maven, Thymeleaf, Spring Data JPA; code in backend/, base package com.group18.dewecs). The four officer web use cases are built (Warning Issuance, Shelter & Rescue, Relief Distribution, Reporting = ground-report review at /ground-reports) and Phase 6 was meant to harden them. The fifth use case, ground hazard reporting, is a Flutter phone app: citizens submit reports and officers review them on the existing /ground-reports pages. This phase adds the JSON API that app calls. The contract below is final: build exactly that.
+Goal: a small, stable, well-tested API, ready for Assignment 02 (due Fri 9 Oct 2026, 11:59 PM) and safe to demo.
+
+Read first: PROGRESS_NOTES.md in the repo root (if it disagrees with the code, trust the code and fix the note), sections 5 (conventions), 6 (routes), 8 (Neon drift) and the "Phase 6 log" at the bottom. Then GroundReport, RescueRequest, Citizen, User, District, GroundReportService and its Impl and test, GroundReportController, GlobalExceptionHandler, CitizenRepository, GroundReportRepository, pom.xml and the config files.
+
+=== DEWECS MOBILE API - CONTRACT v1 (frozen: Phase 7 implements it, Phase 8 consumes it) ===
+
+GENERAL
+- Base path /api/v1. JSON in and out, UTF-8. No authentication in v1 (known limitation: anyone who knows a NIC can report as that citizen).
+- Timestamps: ISO-8601 local date-time in Sri Lanka time (UTC+05:30, no daylight saving), no offset suffix, at most millisecond precision, for example 2026-10-07T14:03:11.123. Clients convert from UTC by adding 5 h 30 min.
+- Coordinates: JSON numbers, decimal degrees (WGS84). The server rounds to 7 decimals.
+- Errors: RFC 7807 problem JSON. Always present: status, title, detail. Bean-validation failures on body fields (400) also carry fieldErrors, an object of field name -> message. Other 400s (rules checked in the service: a NIC that is invalid after normalisation, a photo upload that is not allowed in the report's status, an unsupported, empty or over-5-MB image) carry status, title and detail only. 413 appears only if the servlet container's multipart limit trips before the 5 MB check. Parse error bodies as JSON whatever media type they declare.
+- Report statuses: PENDING_SYNC, PENDING_REVIEW, VERIFIED, REJECTED, NEEDS_INFO, ACTIONED. A new report starts as PENDING_REVIEW. Clients must tolerate unknown values by showing them as raw text.
+
+REPORT OBJECT (returned by every report endpoint)
+  {"id":101,"citizenId":42,"districtId":1,"districtName":"Colombo","category":"FLOOD",
+   "description":"River is overflowing near the bridge","gpsLat":6.9271234,"gpsLng":79.8612345,
+   "photoUrl":null,"status":"PENDING_REVIEW","actionNote":null,"submittedAt":"2026-10-07T14:03:11.123"}
+- photoUrl is null, or a path starting with /api/v1/photos/ (prepend the server base URL), or (legacy rows only) any other text, which clients treat as "no displayable photo".
+- actionNote is non-null only when status is ACTIONED. No reviewer names, phone numbers or other personal data are ever returned.
+
+ENDPOINTS
+1. GET /api/v1/reference-data
+   200 {"districts":[{"id":1,"name":"Colombo"}],"categories":["FLOOD","LANDSLIDE","CYCLONE","DROUGHT"]}
+   Districts are sorted by name (case-insensitive); categories are the HazardType values.
+
+2. POST /api/v1/citizens/identify
+   body {"nic":"199012345678","fullName":"Nimal Perera","phone":"0771234567","districtId":1}
+   201 when a citizen was created, 200 when the NIC already existed (stored name, phone and district are never overwritten).
+   response {"id":42,"fullName":"Nimal Perera","districtId":1,"districtName":"Colombo","created":true}
+   Rules: nic is trimmed, upper-cased and must match ^(\d{9}[VX]|\d{12})$ (old 9-digit-plus-letter or new 12-digit Sri Lankan NIC); fullName is trimmed, 1-120 characters, not blank; phone matches ^\+?[0-9][0-9 -]{7,14}$ ; districtId must exist (404 otherwise).
+
+3. POST /api/v1/ground-reports
+   body {"citizenId":42,"districtId":1,"category":"FLOOD","description":"River is overflowing near the bridge",
+         "gpsLat":6.9271234,"gpsLng":79.8612345,"capturedAt":"2026-10-07T14:03:11.123"}
+   201 + Location header /api/v1/ground-reports/101 + report object. photoUrl cannot be set here.
+   200 + the stored report, unchanged, when a report with the same citizenId, category and capturedAt already exists (idempotent replay, so retries are safe).
+   Rules: citizenId, districtId, category, description, gpsLat, gpsLng are required; capturedAt is optional (default: now, which also means no replay detection); category is one of the reference-data categories (case-insensitive); description is trimmed, 1-2000 characters; gpsLat -90..90; gpsLng -180..180 (deliberately no Sri Lanka bounding box: emulators default to California); capturedAt may not be later than the server's now + 5 minutes; submittedAt = capturedAt when given. Unknown citizenId or districtId -> 404.
+
+4. POST /api/v1/ground-reports/{id}/photo
+   multipart/form-data with one part named file: JPEG, PNG or WebP (checked by content, not by the client's Content-Type), 1 byte to 5 MB.
+   200 + report object with photoUrl set. Uploading again replaces the photo. Allowed only while the status is PENDING_SYNC, PENDING_REVIEW or NEEDS_INFO (otherwise 400). Unknown id -> 404.
+
+5. GET /api/v1/ground-reports/{id}
+   200 report object, or 404.
+
+6. GET /api/v1/citizens/{id}/ground-reports?page=0&size=20
+   200 {"items":[report objects],"page":0,"size":20,"totalItems":57,"totalPages":3}, newest first (submittedAt desc, id desc). A page below 0 becomes 0; size is clamped to 1..50 (default 20). Unknown citizen -> 404.
+
+7. GET /api/v1/photos/{filename}
+   200 image bytes with the matching image/* type, Cache-Control public with max-age one day, X-Content-Type-Options nosniff. Filenames are server-generated (a UUID plus .jpg, .png or .webp); any other name -> 404.
+
+CLIENT RULES (for the Flutter app)
+- Create capturedAt once, when the user taps Submit, and resend the identical value on every retry.
+- POST /ground-reports answering 200 or 201 means the report is stored. Then upload the photo, if any. A failed photo upload never undoes the report.
+- Retry later on: network error, timeout, 5xx, 408, 429. Do not retry automatically (needs the user): 400, 404, 405, 413, 415 and every other status.
+- Responses carry no charset: decode the body bytes as UTF-8 (never as Latin-1) and send requests as UTF-8 with Content-Type application/json.
+- Addresses of the dev machine: Android emulator http://10.0.2.2:8080 ; physical phone http://<laptop LAN IP>:8080 ; or run adb reverse tcp:8080 tcp:8080 and use http://localhost:8080.
+=== END OF CONTRACT v1 ===
+
+HARD RULES
+1. Never print, log or commit credentials. Never connect to the shared Neon database: no running the app with a Neon datasource, no psql, no SQL against Neon. Start the app only with the `local` profile from Phase 6 Stage 1. If the Phase 6 log does not show that stage as done, do not start the app at all: do everything else, skip the smoke run in Stage 6 and tell me. Until that stage is done application.properties still holds the Neon credentials, so read the application*.properties files only through a filter that hides the datasource, username, password and url lines. Scan for secrets by pattern only and never type a real password into a command or print it.
+2. Every test that boots Spring uses @ActiveProfiles("test") (H2). A test must never be able to see a Neon datasource.
+3. No schema changes: no new tables, columns, enum values or @Version fields; the shared Neon database belongs to four people. The only mapping change allowed is the precision/scale annotation in Stage 1 (with the form range check that goes with it), and its Neon side is a SQL file that I run myself.
+4. Follow PROGRESS_NOTES.md section 5: controller -> service interface -> service/impl -> repository, DTO + mapper, constructor injection, no Lombok; services take plain arguments (ids, strings, BigDecimal) and return entities; reuse GroundReportValidationException and ResourceNotFoundException for the report rules, and add CitizenValidationException for the citizen rules (one per aggregate, mapped to 400 in GlobalExceptionHandler).
+5. Do not change the constructor or behaviour of GroundReportServiceImpl: its test builds it with three arguments. New behaviour goes in new services.
+6. All existing tests (43, plus whatever Phase 6 added) stay green. Add tests; never delete or weaken one.
+7. Never log NIC numbers, phone numbers or report text at INFO level or above.
+8. Do not commit or push. Never run git checkout, switch, stash, reset, clean, restore or rebase: my earlier phases are uncommitted in the working tree. Do not reformat or re-save files you do not need to change (keep their line endings) and check git diff --stat at the end.
+9. Use mvn from backend/ (there is no wrapper). If JDK 21 or Maven is missing, or a dependency cannot be downloaded, stop and tell me. Start the app only as a background process whose PID you keep and stop it by that PID (on Windows: taskkill /PID <pid> /T /F); never kill processes by image name, because IntelliJ and other Java programs may be running.
+10. Contract v1 is frozen. If you think it needs a change, stop and ask me: the Flutter app is being built against it.
+11. At the end of each stage append 2-3 lines to a "Phase 7 log" section at the bottom of PROGRESS_NOTES.md (what changed, what is left) so nothing is lost if this session ends.
+
+STAGE 0 - PLAN
+Run git status --short and keep its output (at the end, report only the changes you caused). Run git fetch, then inspect the other branches read-only with git branch -r, git ls-tree -r origin/<branch> and git grep <pattern> origin/<branch> for existing REST or mobile code: a teammate may already have an API or a Flutter project that writes ground reports. If so, show me and stop. Check the Phase 6 log. Then reply with a plan of at most 15 lines (stages, files you will create or touch, anything you are unsure about) and wait for my OK before editing anything.
+
+STAGE 1 - GPS PRECISION (a bug I found while reading the entities)
+GroundReport and RescueRequest declare gpsLat and gpsLng as BigDecimal with no @Column(precision, scale). As far as I know Hibernate 6 then creates numeric(38,2), which silently rounds every coordinate to 2 decimals (about 1 km). Do not assume it: prove it.
+a) Write a @DataJpaTest (test profile) that saves a GroundReport and a RescueRequest with lat 6.9271234 and lng 79.8612345, flushes, clears the persistence context, reloads and asserts the coordinates come back unchanged (compare with compareTo). Also read NUMERIC_PRECISION and NUMERIC_SCALE of the four columns from INFORMATION_SCHEMA.COLUMNS. Run it BEFORE touching the entities and show me the real output. If it already passes, tell me and skip the rest of this stage.
+b) Neon will keep the old columns until I alter them, so I need to know that the new mapping still starts on an old schema. While the entities are still unchanged, create an old-style schema in a file-based H2 database: from backend/, run the app with the local profile (this needs the Phase 6 local profile; if it is missing skip b) and d) and tell me) and these command-line overrides, with the URL in single quotes because of the semicolon: '--spring.datasource.url=jdbc:h2:file:./target/gpscheck;MODE=PostgreSQL' --spring.jpa.hibernate.ddl-auto=create. Stop the app.
+c) Add @Column(precision = 10, scale = 7) to the four fields. Re-run the test until it is green. A coordinate of 1000 or more would now overflow the column and the rescue-request web form has no range check, so also add @DecimalMin and @DecimalMax (-90..90 and -180..180, with messages in the style of the other form messages) to gpsLat and gpsLng in RescueRequestFormRequest, with a test, so bad input gives a form error instead of a database error.
+d) Rebuild if you run a packaged jar or war, then start the app again against the same file with --spring.jpa.hibernate.ddl-auto=validate. It must start. (As far as I know Hibernate's validate compares column types only, never precision or scale, so this proves that startup is unaffected, not that coordinates keep 7 decimals.) If it does not start, stop and tell me: it would mean the Neon columns have to be altered before anyone starts the app. Delete the target/gpscheck files afterwards.
+e) Write doc/neon-gps-precision.sql: a read-only check query on information_schema.columns for ground_reports and rescue_requests (gps_lat, gps_lng), then four ALTER TABLE ... ALTER COLUMN ... TYPE numeric(10,7) statements, with a comment saying I run it in the Neon SQL editor after telling my teammates, that coordinates that were already rounded cannot be recovered, and that until it runs Neon keeps storing 2 decimals (a POST response still shows 7 because it returns the saved object, but a later GET or a replay shows 2). Never run it.
+
+STAGE 2 - SERVICES AND PHOTO STORAGE (no controllers yet)
+- CitizenRepository.findByNicIgnoreCase. GroundReportRepository: a paged query for one citizen's reports (newest first) and the lookup for the replay check (citizen, category, submittedAt).
+- A Clock bean in config/ (zone Asia/Colombo) used only by the new submission service so tests can fix "now". Do not change how the existing services read the time (note in the known gaps that they still use LocalDateTime.now() in the JVM zone).
+- CitizenService + CitizenServiceImpl: identify(nic, fullName, phone, districtId) returns a small result (citizen + created flag). Normalise and validate exactly as in the contract. If two requests race on a new NIC (DataIntegrityViolationException on the unique column), catch it and re-read the existing citizen. identify must NOT be @Transactional as a whole: a rollback-only transaction would break the re-read (PostgreSQL answers "transaction aborted", H2 throws UnexpectedRollbackException). Let each repository call use its own transaction and catch the exception outside any transaction.
+- GroundReportSubmissionService + impl (new; the review service stays untouched): submit(citizenId, districtId, category, description, gpsLat, gpsLng, capturedAt) returning the report plus a created flag; attachPhoto(reportId, ...); listForCitizen(citizenId, page, size) returning a Page. Every rule in the contract, including rounding to 7 decimals (HALF_UP), truncating capturedAt, and the default now, to milliseconds before saving and before the replay lookup, status PENDING_REVIEW, and the status rule for photos. Replay detection is check-then-insert, not a database constraint (no schema change allowed): document that limitation. Because two overlapping retries could insert two rows, the replay lookup must return the oldest match (a findFirst...OrderByIdAsc query or a List), never a single-result Optional that would throw on every later retry. @Transactional on writes and readOnly on reads, matching what Phase 6 Stage 4 did.
+- PhotoStorageService + FileSystemPhotoStorageService: directory from the property dewecs.photos.dir (default uploads/ground-reports relative to the working directory; add uploads/ to .gitignore; the local profile may point it into java.io.tmpdir). store(...) checks size and type by magic bytes (JPEG FF D8 FF, PNG 89 50 4E 47 0D 0A 1A 0A, WebP "RIFF" + 4 bytes + "WEBP"), ignores the client's file name and Content-Type, names the file UUID + extension and returns that name. load(name) returns a Resource only for names that match the generated pattern and resolve inside the directory (no path traversal). delete(name) applies the same name-pattern and containment check as load(name) and is otherwise best effort. Create the photo directory on first use. Attaching a photo: write the new file first, update the row, then delete the old file, but only when the old photoUrl starts with /api/v1/photos/ (legacy photoUrl values are arbitrary text); if the row update fails, delete the new file.
+- application.properties: spring.servlet.multipart.max-file-size=6MB and max-request-size=7MB (Spring's default is 1MB), slightly above the 5 MB rule so the service's own check normally answers first.
+Tests (Mockito and @TempDir, no Spring context unless noted): every rule in the contract, including: new versus existing citizen, NIC normalisation and bad formats, the unique-NIC race, unknown district or citizen, future capturedAt with a fixed Clock, replay returns the stored report with created=false, rounding to 7 decimals, photo allowed or blocked by status, paging clamps, a text file renamed .jpg rejected, more than 5 MB, empty file, names such as ../x, ..\x and absolute paths. Plus a @DataJpaTest for the new repository queries.
+
+STAGE 3 - API LAYER
+- First create doc/api-samples/*.json (reference-data, citizen, report, report-list, problem, problem-with-field-errors) straight from the contract; the shape test below reads them from ../doc/api-samples (tests run with backend/ as the working directory).
+- Controllers under controller/api (@RestController, @RequestMapping("/api/v1")) whose simple class names end in ApiController (GroundReportApiController, CitizenApiController, ReferenceDataApiController, PhotoApiController: the same simple name as a web controller would clash as a Spring bean name), DTOs under dto/api (request classes with Bean Validation messages, response classes), a GroundReportApiMapper. Do NOT reuse the web GroundReportResponse: it contains the reporter's phone number and the reviewer's name. GET /ground-reports/{id} uses the existing GroundReportService.getById; the districts come from the existing listDistricts, sorted by name case-insensitively in the mapper (test the order). The mapper truncates submittedAt to milliseconds on output (older rows hold microseconds; test with a nanosecond value).
+- Error handling for /api/**: everything is a JSON ProblemDetail (with fieldErrors for validation) using the statuses of the contract: malformed JSON 400, missing or wrongly typed parameter 400, wrong method 405, wrong content type 415, upload over the container limit 413, unknown URL 404, unexpected error 500 with no stack trace and no internal message. GlobalExceptionHandler has a catch-all Exception handler that turns framework exceptions into 500: if Phase 6 Stage 4 already fixed that, reuse it; otherwise fix it now for the whole app. Preferred way: extend ResponseEntityExceptionHandler. Careful: it already maps MethodArgumentNotValidException, HttpMessageNotReadable, HttpRequestMethodNotSupported, HttpMediaTypeNotSupported, NoResourceFound, type mismatch and missing parameter, so override its handleXxx methods instead of adding a second @ExceptionHandler for any of them, otherwise Spring fails at startup with an ambiguous mapping. Choose JSON or HTML by request path (/api/) inside the global advice, not with basePackages or annotation selectors: a selector-scoped advice never sees unknown URLs or multipart-limit errors, because no controller has been chosen yet. Paths under /api/ must always get JSON, even when a browser asks with Accept: text/html; the Thymeleaf pages keep the HTML error page from Phase 6.
+- Optional CORS, off by default: property dewecs.api.cors.allowed-origin-patterns (empty = no CORS headers), applied to /api/** only. The local profile sets http://localhost:*,http://127.0.0.1:* so a Flutter web build can call it during development.
+- GET /api/v1/photos/{filename} streams the file with the headers from the contract.
+Tests (@SpringBootTest + @AutoConfigureMockMvc, test profile, H2; the test profile shares one named in-memory database with every other Spring test, so each test builds its own data with unique NICs and leaves none behind, through a @Transactional test class or cleanup in @AfterEach; add dewecs.photos.dir=${java.io.tmpdir}/dewecs-test-photos to application-test.properties so tests never write into backend/uploads): the whole flow (reference-data; identify created, then existing; submit 201; replay 200 with the same id; upload a photo; GET report shows photoUrl; GET photo returns the same bytes with image/png; list newest first with the paging fields); every failure in the contract as a ProblemDetail (400 with fieldErrors, 404s, 405, 415, malformed JSON, unknown /api URL, Accept: text/html on an /api/v1 URL still gives JSON; 413 through the handler, for example with a small test controller that throws MaxUploadSizeExceededException); a contract-shape test that compares the JSON key sets of each response with the files in doc/api-samples (keys only, not values); CORS on and off.
+
+STAGE 4 - WEB SIDE (tiny)
+- templates/ground-reports/detail.html: when photoUrl starts with /api/v1/photos/ show it as an <img> (alt text, a class in style.css that limits the width, wrapped in a link to the full image); otherwise keep today's text. No other template changes in this phase.
+- Re-run the Phase 6 flow tests (they must still pass) and add one test that a report with a photo renders the <img>.
+
+STAGE 5 - DOCS
+- doc/MOBILE_API.md: the contract copied exactly, error semantics, retry guidance, one worked example per endpoint (on Windows PowerShell write the JSON body to a file and use curl.exe --data-binary "@body.json" -H "Content-Type: application/json" (the quotes matter: an unquoted @body.json is PowerShell splatting), or Invoke-RestMethod; multipart with curl.exe -F "file=@photo.png;type=image/png"), how to run the backend for the app (local profile, 10.0.2.2, LAN IP, adb reverse), and known limitations (no authentication, NIC not verified, photos on local disk, no push updates, replay detection is check-then-insert).
+- doc/api-samples/*.json already exist from Stage 3: re-check them against the final responses. Phase 8 copies them.
+- doc/DEWECS-mobile-api.postman_collection.json: a NEW collection for the seven endpoints (variables baseUrl, citizenId, reportId; no secrets). Do not edit the existing collection.
+- PROGRESS_NOTES.md: section 6 (routes), the test count, the config (photos directory, multipart limits, CORS property), known gaps; extend the viva cheat-sheet (section 14) with answers that name classes and tests: why a new submission service instead of extending the review service, how retries are safe without a schema change, why photos are validated by content, why coordinates are numeric(10,7).
+- backend/README.md: a "Mobile API" section. CLAUDE.md (if Phase 6 created it): add the new rules in at most 5 lines and keep the file within Phase 6's 40-line limit.
+
+STAGE 6 - FINAL CHECK AND REPORT
+- Run mvn -B clean verify: green. Report tests run and failed, and the coverage of the new classes.
+- If Phase 6 Stage 1 is done: start the app with the local profile and walk the real flow once with curl.exe or Invoke-RestMethod: reference-data, identify, submit, replay (same capturedAt, expect 200 and the same id), upload a tiny valid PNG, fetch the report and the photo, list; upload a file of about 6.5 MB and expect a JSON 413; then open /ground-reports and /ground-reports/{id} and confirm the report and its <img> show on the officer pages. If port 8080 is busy use --server.port=8089. Stop the app afterwards and make sure no java process you started is still running.
+- Scan every new and changed file for secrets by pattern only (npg_, neon.tech, password\s*=\s*[^$\s]); never type the real password into a command. Compare git status --short with the Stage 0 output: only intended files may differ.
+- Final report (max 25 lines): files changed, test count and coverage, the API as implemented and any deviation from the contract, decisions I should review, and what is left for me to do by hand (run doc/neon-gps-precision.sql after telling the team; give my Flutter teammate doc/MOBILE_API.md; push).
+
+ASK ME FIRST (propose, do not implement): ordering the web ground-report list newest first (the current query has no ORDER BY); keeping Citizen records out of the staff drop-downs (listUsersForSelection returns every User, so citizens created by the app will show up in the reviewer list on /ground-reports/{id} and in the Issued by list of the warning form); any contract change; authentication or API keys; rate limiting; any new dependency (OpenAPI/Swagger, Tika, Spring Security).
+
+WORKING STYLE
+After I approve the plan, run stages 1-6 in order. Pause only for an ask-first item, a failed experiment in Stage 1, or if a stage fails twice. After each stage give a 3-5 line summary. If time gets short, the priority order is Stages 1, 2, 3, 6, then 5, then 4.

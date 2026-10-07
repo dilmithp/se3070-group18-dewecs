@@ -1,0 +1,23 @@
+{
+  "entries": {
+    "cmd-1791357539047": {
+      "key": "cmd-1791357539047",
+      "value": "{\"command\":\"cd /c/Users/dilmithp/Downloads/Dilmith/projects/se3070-group18-dewecs/backend/src/main && cat java/com/group18/dewecs/dto/DashboardSummary.java | grep -v \\\"^import\\\\|^package\\\"; grep -n \\\"summary\\\\.\\\" resources/templates/dashboard.html | head; grep -n \\\"th:text\\\\|class=\\\\\\\"alert\\\\|error\\\\|message\\\" resources/templates/shelters/detail.html | head -12\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-07T07:18:59.047Z",
+      "lastAccessed": "2026-10-07T07:18:59.047Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-06T07:18:59.047Z"
+    },
+    "cmd-1791359559334": {
+      "key": "cmd-1791359559334",
+      "value": "{\"command\":\"cd /c/Users/dilmithp/Downloads/Dilmith/projects/se3070-group18-dewecs/backend/src/main && B=java/com/group18/dewecs\",\"exitCode\":0,\"success\":true}",
+      "namespace": "commands",
+      "storedAt": "2026-10-07T07:52:39.334Z",
+      "lastAccessed": "2026-10-07T07:52:39.334Z",
+      "accessCount": 0,
+      "expiresAt": "2026-11-06T07:52:39.334Z"
+    }
+  },
+  "version": "3.0.0"
+}

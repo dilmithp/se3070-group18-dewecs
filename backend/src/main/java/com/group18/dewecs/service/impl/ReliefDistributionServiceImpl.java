@@ -13,11 +13,13 @@ import com.group18.dewecs.repository.ResourceRepository;
 import com.group18.dewecs.repository.ShelterRepository;
 import com.group18.dewecs.service.ReliefDistributionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class ReliefDistributionServiceImpl implements ReliefDistributionService {
 
     private final ReliefConsignmentRepository consignmentRepository;
@@ -36,6 +38,7 @@ public class ReliefDistributionServiceImpl implements ReliefDistributionService 
     }
 
     @Override
+    @Transactional
     public ReliefConsignment create(Long resourceId, Long shelterId, Integer quantity) {
         Resource resource = findResource(resourceId);
         Shelter shelter = findShelter(shelterId);
@@ -69,6 +72,7 @@ public class ReliefDistributionServiceImpl implements ReliefDistributionService 
     }
 
     @Override
+    @Transactional
     public ReliefConsignment deliver(Long distributionId) {
         ReliefConsignment consignment = findConsignment(distributionId);
         if (consignment.getStatus() != ConsignmentStatus.DISPATCHED) {
@@ -80,6 +84,7 @@ public class ReliefDistributionServiceImpl implements ReliefDistributionService 
     }
 
     @Override
+    @Transactional
     public ReliefConsignment cancel(Long distributionId) {
         ReliefConsignment consignment = findConsignment(distributionId);
         if (consignment.getStatus() != ConsignmentStatus.DISPATCHED) {
