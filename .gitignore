@@ -11,3 +11,4 @@ backend/.mvn/wrapper/maven-wrapper.jar
 uploads/
 /.claude-flow
 CLAUDE.md
+/mobile/.claude-flow
