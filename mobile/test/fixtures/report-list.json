@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "id": 101,
+      "citizenId": 42,
+      "districtId": 1,
+      "districtName": "Colombo",
+      "category": "FLOOD",
+      "description": "River is overflowing near the bridge",
+      "gpsLat": 6.9271234,
+      "gpsLng": 79.8612345,
+      "photoUrl": null,
+      "status": "PENDING_REVIEW",
+      "actionNote": null,
+      "submittedAt": "2026-10-07T14:03:11.123"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalItems": 57,
+  "totalPages": 3
+}
