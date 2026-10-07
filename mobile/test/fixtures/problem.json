@@ -1,0 +1,7 @@
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Ground report not found: 999",
+  "instance": "/api/v1/ground-reports/999"
+}

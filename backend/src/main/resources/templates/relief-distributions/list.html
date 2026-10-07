@@ -1,62 +1,71 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Relief Distributions</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Relief distributions')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('distributions')}"></th:block>
 
-<h1>Relief Distributions</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Relief Distributions', 'Supplies dispatched to shelters and whether they arrived.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <form method="get" th:action="@{/relief-distributions}" class="filter-bar card">
+        <div class="field">
+            <label for="f-status">Status</label>
+            <select id="f-status" name="status">
+                <option value="">All statuses</option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:selected="${s.name() == selectedStatus}"><th:block th:replace="~{fragments/layout :: enumLabel(${s.name()})}"></th:block></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-shelter">Shelter</label>
+            <select id="f-shelter" name="shelterId">
+                <option value="">All shelters</option>
+                <option th:each="sh : ${shelters}" th:value="${sh.id}" th:text="${sh.name}"
+                        th:selected="${sh.id == selectedShelterId}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-resource">Supply</label>
+            <select id="f-resource" name="resourceId">
+                <option value="">All supplies</option>
+                <option th:each="r : ${supplies}" th:value="${r.id}" th:text="${r.name}"
+                        th:selected="${r.id == selectedResourceId}"></option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a th:href="@{/relief-distributions/new}" class="btn btn-primary">+ New distribution</a>
+        </div>
+    </form>
 
-<form method="get" th:action="@{/relief-distributions}" class="filter-bar">
-    <select name="status">
-        <option value="">All statuses</option>
-        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name()}"
-                th:selected="${s.name() == selectedStatus}"></option>
-    </select>
-    <select name="shelterId">
-        <option value="">All shelters</option>
-        <option th:each="sh : ${shelters}" th:value="${sh.id}" th:text="${sh.name}"
-                th:selected="${sh.id == selectedShelterId}"></option>
-    </select>
-    <select name="resourceId">
-        <option value="">All supplies</option>
-        <option th:each="r : ${supplies}" th:value="${r.id}" th:text="${r.name}"
-                th:selected="${r.id == selectedResourceId}"></option>
-    </select>
-    <button type="submit">Filter</button>
-    <a th:href="@{/relief-distributions/new}" class="button">+ New distribution</a>
-</form>
-
-<table>
-    <thead>
-    <tr>
-        <th>Supply</th>
-        <th>Quantity</th>
-        <th>Shelter</th>
-        <th>Status</th>
-        <th>Dispatched at</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="d : ${distributions}">
-        <td th:text="${d.resourceName}"></td>
-        <td th:text="${d.quantity} + ' ' + ${d.resourceUnit}"></td>
-        <td th:text="${d.shelterName}"></td>
-        <td th:text="${d.status}"></td>
-        <td th:text="${d.dispatchedAt}"></td>
-        <td><a th:href="@{/relief-distributions/{id}(id=${d.id})}">View</a></td>
-    </tr>
-    <tr th:if="${distributions.isEmpty()}">
-        <td colspan="6">No distributions match this filter.</td>
-    </tr>
-    </tbody>
-</table>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Supply</th>
+                <th scope="col" class="num">Quantity</th>
+                <th scope="col">Shelter</th>
+                <th scope="col">Status</th>
+                <th scope="col">Dispatched at</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="d : ${distributions}">
+                <td th:text="${d.resourceName}"></td>
+                <td class="num nowrap" th:text="${d.quantity} + ' ' + ${d.resourceUnit}"></td>
+                <td th:text="${d.shelterName}"></td>
+                <td><span th:replace="~{fragments/layout :: badge(${d.status})}"></span></td>
+                <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${d.dispatchedAt})}"></th:block></td>
+                <td><a th:href="@{/relief-distributions/{id}(id=${d.id})}" class="btn btn-link">View</a></td>
+            </tr>
+            <tr th:if="${distributions.isEmpty()}">
+                <td colspan="6" class="empty">No distributions match this filter. Clear the filters or dispatch supplies to a shelter.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

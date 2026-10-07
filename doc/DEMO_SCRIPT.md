@@ -28,16 +28,20 @@ Open http://localhost:8080. No environment variables are needed and the shared N
 
 ## Click path
 
+Statuses, severities and priorities appear as coloured badges with readable text (the stored value ISSUED shows
+as "Issued", PENDING_REVIEW as "Pending review"). Destructive buttons (Retract, Close, Cancel, Dismiss) ask for
+confirmation in the browser first.
+
 1. **Dashboard** (`/dashboard`). The five counts read **Open warnings 2, Full shelters 1, Pending rescue requests 2,
    Low-stock supplies 1, Unreviewed reports 2**. The open-warnings figure includes warning 3, which is overdue but not
    yet marked expired.
-2. **Warnings** (`/warnings`). Warning 3 now shows **EXPIRED**: the list expires overdue issued warnings when it is
+2. **Warnings** (`/warnings`). Warning 3 now shows the **Expired** badge: the list expires overdue issued warnings when it is
    opened. Go back to the dashboard: Open warnings is now **1**.
-3. **Publish a draft.** Open warning 1, click Publish. Flash: *Warning published.* Status ISSUED; dashboard Open
+3. **Publish a draft.** Open warning 1, click Publish. Flash: *Warning published.* Status badge **Issued**; dashboard Open
    warnings is **2**.
 4. **Retract it.** Click Retract. Flash: *Warning retracted.* Publishing it again shows *Only draft warnings can be
    edited or published.*
-5. **Shelters** (`/shelters/1`). Check in one occupant (any name and NIC). Occupancy becomes 10/10, status **FULL**,
+5. **Shelters** (`/shelters/1`). Check in one occupant (any name and NIC). Occupancy becomes 10/10 (the bar turns red), status badge **Full**,
    dashboard Full shelters **2**. Check in another: *Cannot check in: shelter is at full capacity.*
 6. **Close and reopen.** Close shelter 1: *Shelter closed.* Check in while closed: *Cannot check in: shelter is
    closed.* Reopen: *Shelter reopened.*
@@ -54,5 +58,5 @@ Open http://localhost:8080. No environment variables are needed and the shared N
     stock; shown by `ReliefFlowTest`.)
 12. **Ground reports** (`/ground-reports/1`). Review as Nadeesha: dashboard Unreviewed reports drops to **1**.
 13. **Action needs a note.** On report 3 (already reviewed) click Action with an empty note: *An action note is
-    required.* Enter *Team dispatched to Kolonnawa*: *Report actioned.* Status **ACTIONED**.
+    required.* Enter *Team dispatched to Kolonnawa*: *Report actioned.* Status badge **Actioned**.
 14. **Dismiss.** On report 2 click Dismiss: *Report dismissed.*

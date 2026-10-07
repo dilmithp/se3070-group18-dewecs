@@ -11,3 +11,8 @@ backend/.mvn/wrapper/maven-wrapper.jar
 uploads/
 /.claude-flow
 CLAUDE.md
+/mobile/.claude-flow
+/backend/.claude-flow
+
+# Tool state folders created in any directory
+**/.claude-flow/

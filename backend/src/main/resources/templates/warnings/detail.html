@@ -1,55 +1,55 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Warning detail</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Warning detail')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('warnings')}"></th:block>
 
-<h1 th:text="${warning.hazardType} + ' warning — ' + ${warning.districtName}"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${#strings.capitalize(#strings.toLowerCase(warning.hazardType)) + ' warning — ' + warning.districtName}, null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Status</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${warning.status})}"></span></dd>
 
-<dl>
-    <dt>Status</dt>
-    <dd th:text="${warning.status}"></dd>
+            <dt>Severity</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${warning.severity})}"></span></dd>
 
-    <dt>Severity</dt>
-    <dd th:text="${warning.severity}"></dd>
+            <dt>Message</dt>
+            <dd th:text="${warning.message} ?: '—'"></dd>
 
-    <dt>Message</dt>
-    <dd th:text="${warning.message} ?: '—'"></dd>
+            <dt>Broadcast channels</dt>
+            <dd th:text="${#lists.isEmpty(warning.broadcastChannels)} ? '—' : ${#strings.listJoin(warning.broadcastChannels, ', ')}"></dd>
 
-    <dt>Broadcast channels</dt>
-    <dd th:text="${#lists.isEmpty(warning.broadcastChannels)} ? '—' : ${#strings.listJoin(warning.broadcastChannels, ', ')}"></dd>
+            <dt>Issued by</dt>
+            <dd th:text="${warning.issuedByName}"></dd>
 
-    <dt>Issued by</dt>
-    <dd th:text="${warning.issuedByName}"></dd>
+            <dt>Issued at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${warning.issuedAt})}"></th:block></dd>
 
-    <dt>Issued at</dt>
-    <dd th:text="${warning.issuedAt} ?: '—'"></dd>
+            <dt>Expires at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${warning.expiresAt})}"></th:block></dd>
+        </dl>
+    </section>
 
-    <dt>Expires at</dt>
-    <dd th:text="${warning.expiresAt} ?: '—'"></dd>
-</dl>
+    <div class="actions">
+        <form th:if="${warning.status == 'DRAFT'}" th:action="@{/warnings/{id}/publish(id=${warning.id})}"
+              method="post" class="inline-form">
+            <button type="submit" class="btn btn-primary">Publish</button>
+        </form>
 
-<div class="actions">
-    <a th:if="${warning.status == 'DRAFT'}" th:href="@{/warnings/{id}/edit(id=${warning.id})}">Edit</a>
+        <a th:if="${warning.status == 'DRAFT'}" th:href="@{/warnings/{id}/edit(id=${warning.id})}" class="btn btn-secondary">Edit</a>
 
-    <form th:if="${warning.status == 'DRAFT'}" th:action="@{/warnings/{id}/publish(id=${warning.id})}"
-          method="post" class="inline-form">
-        <button type="submit">Publish</button>
-    </form>
+        <form th:if="${warning.status == 'DRAFT' or warning.status == 'ISSUED'}"
+              th:action="@{/warnings/{id}/retract(id=${warning.id})}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-danger"
+                    data-confirm="Retract this warning? It will no longer count as open.">Retract</button>
+        </form>
 
-    <form th:if="${warning.status == 'DRAFT' or warning.status == 'ISSUED'}"
-          th:action="@{/warnings/{id}/retract(id=${warning.id})}" method="post" class="inline-form">
-        <button type="submit">Retract</button>
-    </form>
-
-    <a th:href="@{/warnings}">Back to list</a>
-</div>
+        <a th:href="@{/warnings}" class="btn btn-link">Back to list</a>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

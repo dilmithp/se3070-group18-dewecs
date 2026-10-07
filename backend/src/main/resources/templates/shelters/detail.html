@@ -1,82 +1,99 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Shelter detail</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Shelter detail')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('shelters')}"></th:block>
 
-<h1 th:text="${shelter.name} + ' — ' + ${shelter.districtName}"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${shelter.name + ' — ' + shelter.districtName}, null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Status</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${shelter.status})}"></span></dd>
 
-<dl>
-    <dt>Status</dt>
-    <dd th:text="${shelter.status}"></dd>
+            <dt>Occupancy</dt>
+            <dd>
+                <div class="occupancy-row">
+                    <span th:text="${shelter.currentOccupancy} + ' / ' + ${shelter.capacity}"></span>
+                    <progress class="occupancy" th:classappend="${shelter.currentOccupancy >= shelter.capacity} ? 'is-full'"
+                              th:attr="max=${shelter.capacity},value=${shelter.currentOccupancy},aria-label='Shelter occupancy'"></progress>
+                    <span class="help" th:text="${shelter.capacity > 0 ? shelter.currentOccupancy * 100 / shelter.capacity : 0} + '% full'"></span>
+                </div>
+            </dd>
 
-    <dt>Occupancy</dt>
-    <dd th:text="${shelter.currentOccupancy} + ' / ' + ${shelter.capacity}"></dd>
+            <dt>Organization</dt>
+            <dd th:text="${shelter.organizationName}"></dd>
+        </dl>
+    </section>
 
-    <dt>Organization</dt>
-    <dd th:text="${shelter.organizationName}"></dd>
-</dl>
+    <div class="actions">
+        <a th:href="@{/shelters/{id}/edit(id=${shelter.id})}" class="btn btn-secondary">Edit</a>
 
-<div class="actions">
-    <a th:href="@{/shelters/{id}/edit(id=${shelter.id})}">Edit</a>
+        <form th:if="${shelter.status != 'CLOSED'}" th:action="@{/shelters/{id}/close(id=${shelter.id})}"
+              method="post" class="inline-form">
+            <button type="submit" class="btn btn-danger"
+                    data-confirm="Close this shelter? No new occupants can be checked in until it is reopened.">Close</button>
+        </form>
 
-    <form th:if="${shelter.status != 'CLOSED'}" th:action="@{/shelters/{id}/close(id=${shelter.id})}"
-          method="post" class="inline-form">
-        <button type="submit">Close</button>
-    </form>
+        <form th:if="${shelter.status == 'CLOSED'}" th:action="@{/shelters/{id}/reopen(id=${shelter.id})}"
+              method="post" class="inline-form">
+            <button type="submit" class="btn btn-primary">Reopen</button>
+        </form>
 
-    <form th:if="${shelter.status == 'CLOSED'}" th:action="@{/shelters/{id}/reopen(id=${shelter.id})}"
-          method="post" class="inline-form">
-        <button type="submit">Reopen</button>
-    </form>
+        <a th:href="@{/shelters}" class="btn btn-link">Back to list</a>
+    </div>
 
-    <a th:href="@{/shelters}">Back to list</a>
-</div>
+    <section class="card">
+        <h2>Check in a new occupant</h2>
+        <form th:action="@{/shelters/{id}/check-in(id=${shelter.id})}" th:object="${checkInForm}" method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="fullName">Full name <span class="req" aria-hidden="true">*</span></label>
+                    <input type="text" th:field="*{fullName}" aria-required="true" autocomplete="off"/>
+                </div>
+                <div class="field">
+                    <label for="nic">NIC <span class="req" aria-hidden="true">*</span></label>
+                    <input type="text" th:field="*{nic}" aria-required="true" autocomplete="off"/>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Check in</button>
+            </div>
+        </form>
+    </section>
 
-<h2>Check in a new occupant</h2>
-<form th:action="@{/shelters/{id}/check-in(id=${shelter.id})}" th:object="${checkInForm}" method="post">
-    <label>Full name
-        <input type="text" th:field="*{fullName}"/>
-    </label>
-    <label>NIC
-        <input type="text" th:field="*{nic}"/>
-    </label>
-    <button type="submit">Check in</button>
-</form>
-
-<h2>Current occupants</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>NIC</th>
-        <th>Checked in</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="o : ${occupants}">
-        <td th:text="${o.fullName}"></td>
-        <td th:text="${o.nic}"></td>
-        <td th:text="${o.checkInTime}"></td>
-        <td>
-            <form th:action="@{/shelters/{id}/check-out/{occupantId}(id=${shelter.id},occupantId=${o.id})}"
-                  method="post" class="inline-form">
-                <button type="submit">Check out</button>
-            </form>
-        </td>
-    </tr>
-    <tr th:if="${occupants.isEmpty()}">
-        <td colspan="4">No occupants currently checked in.</td>
-    </tr>
-    </tbody>
-</table>
+    <h2>Current occupants</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">NIC</th>
+                <th scope="col">Checked in</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${occupants}">
+                <td th:text="${o.fullName}"></td>
+                <td th:text="${o.nic}"></td>
+                <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${o.checkInTime})}"></th:block></td>
+                <td>
+                    <form th:action="@{/shelters/{id}/check-out/{occupantId}(id=${shelter.id},occupantId=${o.id})}"
+                          method="post" class="inline-form">
+                        <button type="submit" class="btn btn-secondary btn-sm">Check out</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${occupants.isEmpty()}">
+                <td colspan="4" class="empty">No occupants are checked in right now.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

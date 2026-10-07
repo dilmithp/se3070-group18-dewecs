@@ -1,0 +1,6 @@
+{
+  "districts": [
+    { "id": 1, "name": "Colombo" }
+  ],
+  "categories": ["FLOOD", "LANDSLIDE", "CYCLONE", "DROUGHT"]
+}

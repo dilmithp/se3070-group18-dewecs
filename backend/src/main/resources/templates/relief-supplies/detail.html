@@ -1,44 +1,50 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Relief supply detail</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Relief supply')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('supplies')}"></th:block>
 
-<h1 th:text="${supply.name} + ' — ' + ${supply.districtName}"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${supply.name + ' — ' + supply.districtName}, null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Category</dt>
+            <dd><th:block th:replace="~{fragments/layout :: enumLabel(${supply.type})}"></th:block></dd>
 
-<dl>
-    <dt>Category</dt>
-    <dd th:text="${supply.type}"></dd>
+            <dt>Stock</dt>
+            <dd>
+                <span th:text="${supply.quantity} + ' ' + ${supply.unit}"></span>
+                <span th:if="${supply.outOfStock}" class="badge badge-danger">OUT OF STOCK</span>
+                <span th:if="${!supply.outOfStock and supply.lowStock}" class="badge badge-warning">LOW STOCK</span>
+            </dd>
 
-    <dt>Stock</dt>
-    <dd>
-        <span th:text="${supply.quantity} + ' ' + ${supply.unit}"></span>
-        <span th:if="${supply.outOfStock}" class="badge badge-danger">OUT OF STOCK</span>
-        <span th:if="${!supply.outOfStock and supply.lowStock}" class="badge badge-warning">LOW STOCK</span>
-    </dd>
+            <dt>Owning organization</dt>
+            <dd th:text="${supply.organizationName}"></dd>
+        </dl>
+    </section>
 
-    <dt>Owning organization</dt>
-    <dd th:text="${supply.organizationName}"></dd>
-</dl>
+    <div class="actions">
+        <a th:href="@{/relief-supplies/{id}/edit(id=${supply.id})}" class="btn btn-secondary">Edit</a>
+        <a th:href="@{/relief-supplies}" class="btn btn-link">Back to list</a>
+    </div>
 
-<div class="actions">
-    <a th:href="@{/relief-supplies/{id}/edit(id=${supply.id})}">Edit</a>
-    <a th:href="@{/relief-supplies}">Back to list</a>
-</div>
-
-<h2>Restock</h2>
-<form th:action="@{/relief-supplies/{id}/restock(id=${supply.id})}" th:object="${restockForm}" method="post">
-    <label>Additional quantity
-        <input type="number" min="1" th:field="*{quantity}"/>
-    </label>
-    <button type="submit">Add stock</button>
-</form>
+    <section class="card">
+        <h2>Restock</h2>
+        <form th:action="@{/relief-supplies/{id}/restock(id=${supply.id})}" th:object="${restockForm}" method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="quantity">Additional quantity <span class="req" aria-hidden="true">*</span></label>
+                    <input type="number" min="1" th:field="*{quantity}" aria-required="true"/>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Add stock</button>
+            </div>
+        </form>
+    </section>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

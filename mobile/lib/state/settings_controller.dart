@@ -1,0 +1,105 @@
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+
+import '../api/dewecs_api.dart';
+import '../api/fake_dewecs_api.dart';
+import '../api/http_dewecs_api.dart';
+import '../config/app_config.dart';
+import '../storage/key_value_store.dart';
+import 'clearable.dart';
+
+/// Server address and Demo mode, and the API object the rest of the app uses.
+class SettingsController extends ChangeNotifier {
+  SettingsController(this._store, {this.apiOverride, this.httpClient}) {
+    _baseUrl = _store.getString(_kBaseUrl) ?? defaultBaseUrl();
+    _demoMode = _store.getString(_kDemo) == 'true';
+  }
+
+  static const _kBaseUrl = 'settings.baseUrl';
+  static const _kDemo = 'settings.demoMode';
+
+  final KeyValueStore _store;
+  /// Tests plug the fake server in here, whatever the settings say.
+  final DewecsApi? apiOverride;
+  final http.Client? httpClient;
+  final List<Clearable> _clearables = [];
+
+  late String _baseUrl;
+  late bool _demoMode;
+  FakeDewecsApi? _fake;
+  HttpDewecsApi? _http;
+
+  String get baseUrl => _baseUrl;
+
+  bool get demoMode => _demoMode;
+
+  /// The fake server (only meaningful in Demo mode); created on first use.
+  FakeDewecsApi get fake => _fake ??= FakeDewecsApi();
+
+  /// The API for the current settings. Callers fetch it each time, so a changed address takes effect at once.
+  DewecsApi get api {
+    final override = apiOverride;
+    if (override != null) {
+      return override;
+    }
+    if (_demoMode) {
+      return fake;
+    }
+    final current = _http;
+    if (current != null && current.baseUrl == _baseUrl.replaceAll(RegExp(r'/+$'), '')) {
+      return current;
+    }
+    return _http = HttpDewecsApi(baseUrl: _baseUrl, client: httpClient);
+  }
+
+  /// An API for an address that is typed but not saved yet (the Test connection button).
+  DewecsApi apiFor(String address) {
+    final override = apiOverride;
+    if (override != null) {
+      return override;
+    }
+    return _demoMode ? fake : HttpDewecsApi(baseUrl: address, client: httpClient);
+  }
+
+  /// Address of a server photo, or null in Demo mode (the fake server has no photo files to load).
+  String? photoUrlFor(String photoPath) =>
+      _demoMode ? null : '${_baseUrl.replaceAll(RegExp(r'/+$'), '')}$photoPath';
+
+  void registerClearable(Clearable clearable) => _clearables.add(clearable);
+
+  Future<void> setBaseUrl(String value) async {
+    _baseUrl = value.trim();
+    await _store.setString(_kBaseUrl, _baseUrl);
+    notifyListeners();
+  }
+
+  /// Fake ids must never reach the real backend, so everything stored on the phone is wiped first.
+  Future<void> setDemoMode(bool value) async {
+    if (value == _demoMode) {
+      return;
+    }
+    for (final clearable in _clearables) {
+      await clearable.clearLocalData();
+    }
+    _fake = null;
+    _demoMode = value;
+    await _store.setString(_kDemo, value.toString());
+    notifyListeners();
+  }
+
+  /// Wipes the fake server (Demo mode only), as if the real server database had been reset.
+  void resetFakeServer() {
+    fake.resetServer();
+    notifyListeners();
+  }
+
+  void setFakeNetworkFailure(bool value) {
+    fake.failNetwork = value;
+    notifyListeners();
+  }
+
+  void setFakeServerError(bool value) {
+    fake.failStatus = value ? 500 : null;
+    notifyListeners();
+  }
+}

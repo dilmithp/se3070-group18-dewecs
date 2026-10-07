@@ -132,6 +132,7 @@ Five counts: open (`ISSUED`) warnings, `FULL` shelters, `PENDING` rescue request
 - **Exceptions:** `ResourceNotFoundException` plus one validation exception per aggregate (`Warning…`, `Shelter…`, `RescueRequest…`, `Relief…`, `GroundReport…`). `GlobalExceptionHandler` (`@RestControllerAdvice`) maps them to RFC 7807 `ProblemDetail` JSON: not found → 404, validation → 400, `MethodArgumentNotValidException` → 400 with `fieldErrors`, anything else → 500 "Unexpected error occurred".
 - **Filters** are parsed leniently: an unknown enum value in a query string means "no filter".
 - **JPA choices:** `Citizen extends User` with `JOINED` inheritance; `open-in-view=false`, so small owned collections (`Warning.broadcastChannels`, `ReliefConsignment.items`) are fetched eagerly; `Severity` is shared by hazard events, warnings and rescue priorities.
+- **UI (Phase 9):** pages share the fragments in `templates/fragments/layout.html` (`head`, `nav`, `pageHeader`, `flash`, `badge`, `enumLabel`, `time`); `static/css/style.css` is built on design tokens; `static/js/app.js` only adds confirm dialogs (`data-confirm`). Enums are shown as readable badges, timestamps as `yyyy-MM-dd HH:mm`, empty values as a dash. See `backend/README.md`, section "UI".
 - **Package contents (main):** controller 7, domain 29, dto 15, exception 7, mapper 6, repository 16, service 14 (7 interfaces + 7 impls), plus `DewecsApplication`. `config/` is empty.
 
 ---
@@ -443,6 +444,13 @@ Reference: https://code.claude.com/docs/en/sessions
 | Why are coordinates `numeric(10,7)`? | Hibernate's default for an unannotated `BigDecimal` is `numeric(38,2)`: `GpsPrecisionTest` showed 6.9271234 reloading as 6.93 (about 1 km). 7 decimals is about 1 cm and 10 digits fit +/-180. Neon keeps the old columns until `doc/neon-gps-precision.sql` is run; `validate` does not compare precision, so startup is unaffected (checked against an old-style H2 file). |
 | Why is `CitizenServiceImpl.identify` not transactional? | Two requests can race on a new NIC; the unique constraint rejects the second. In one transaction that would leave it rollback-only and the re-read of the winner would fail, so each repository call has its own transaction and the exception is caught outside (`CitizenServiceImplTest.identify_raceOnUniqueNic_rereadsTheWinner`). |
 | How do API and web errors differ? | `GlobalExceptionHandler` picks by path: anything under `/api/` is always problem+json (explicit content type, even for `Accept: text/html`); the Thymeleaf pages get `error.html`. Tests: `ApiErrorTest`, `ErrorHandlingTest`. |
+| Why offline-first? | In a disaster the connection is the least reliable part. Submit stores the report in `QueueRepository` first and `SyncService` sends it later, so a report is never lost to a dropped connection. Tests: `sync_service_test.dart` (offline then online, 500 then success), `new_report_screen_test.dart` (offline submit is saved on the phone). |
+| How do retries stay idempotent without a schema change? | The phone creates `capturedAt` once, when the user taps Submit, and resends the identical string. The backend looks up citizen + category + `submittedAt` and answers 200 with the stored report instead of inserting again (`GroundReportSubmissionServiceImpl`). Test: `sync_service_test.dart` "replay" and "the same capturedAt goes out on every retry". |
+| Why is `capturedAt` created on the device? | Only the device knows when the user saw the hazard, and a value fixed before the first attempt is what makes the retry key stable. The server rejects times more than 5 minutes ahead, so a wrong phone clock is a visible permanent error. |
+| What does Provider do here? | `ChangeNotifier` controllers (`SettingsController`, `IdentityController`, `ReferenceDataController`, `SyncService`, `ReportsController`) are created once in `AppDependencies` and handed to the widget tree; screens `watch` them and rebuild on `notifyListeners()`. No code generation, nothing hidden. |
+| How are failures classified? | One `ApiException` with `retryable` following the contract: network, timeout, 5xx, 408 and 429 retry later; other statuses need the user. A 404 on submit asks the reference data whether the citizen or the district is gone. Tests: `http_dewecs_api_test.dart` "retry rules", `sync_service_test.dart` 404 cases. |
+| Why decode responses as UTF-8 bytes? | Spring sends `application/json` without a charset and package:http would decode it as Latin-1, garbling Sinhala text. `HttpDewecsApi` always uses `utf8.decode(response.bodyBytes)`. Test: Sinhala and em dash in `http_dewecs_api_test.dart`. |
+| What would you add to the app next? | Background sync with WorkManager, authentication (so a NIC alone cannot report as a citizen), Sinhala and Tamil strings, a map view, push notifications for status changes, and iOS. |
 | What would you add next? | Spring Security with the roles named in the TODOs, `@Transactional` and optimistic locking, MockMvc and context tests, pagination, a scheduled expiry job, the mobile REST API. |
 
 ---
@@ -454,7 +462,33 @@ Reference: https://code.claude.com/docs/en/sessions
 - 19 Thymeleaf templates + `style.css` · 44 routes · 44 Postman requests in 7 folders
 - Phase 6 (7 Oct): 83 tests (40 Mockito + 9 `@DataJpaTest` + 34 MockMvc) · JaCoCo 79% lines / 62% branches · 26 auth TODO comments
 - Phase 7 (7 Oct): 152 tests · JaCoCo 82% lines / 70% branches · 7 API endpoints · 6 sample JSON files
+- Phase 8 (7 Oct): Flutter app, 152 widget/unit tests, 29 smoke checks against the real backend
 - Original figures at `3f8e285`: 43 tests (40 Mockito + 3 repository slice)
+
+## 16. Mobile app (Phase 8, `mobile/`)
+
+Flutter app "DEWECS Report" for the fifth use case (ground hazard reporting by citizens). Android only
+(`flutter create --platforms android`), Flutter 3.47.6 kept in `projects/DevTools/flutter` with the pub cache and Gradle
+home beside it so the space is easy to reclaim. It talks to the Spring backend over HTTP only (contract v1,
+`doc/MOBILE_API.md`); it has no database credentials, no Google Maps and no Firebase.
+
+- **What exists:** identify once (NIC never stored), report form (category chips, description, GPS or typed coordinates,
+  optional photo), offline queue and sync engine, My reports (cached, status chips, officers' note when ACTIONED, photo,
+  Open in maps), Settings (server address, Test connection, Demo mode with a fake server), debug-only Sync queue screen.
+- **How to run it:** `mobile/README.md` (emulator `http://10.0.2.2:8080`, phone via LAN IP or `adb reverse tcp:8080 tcp:8080`,
+  backend started with `--spring.profiles.active=local`). The Android SDK is not installed on this machine yet, so the
+  app has been verified by tests and by `tool/smoke.dart`, not on an emulator.
+- **Tests:** 152 Flutter tests (models and fixtures from `doc/api-samples`, `HttpDewecsApi` with `MockClient`, the fake server,
+  validators, queue state machine, sync engine, controllers, widgets, 200% text scale, tap-target and contrast guidelines,
+  both themes) and `dart run tool/smoke.dart http://localhost:8092`: 29 checks against the real backend (local profile,
+  port 8092, stopped by PID afterwards), all passed.
+- **Dependencies added** (all from the allowed list): http (HTTP client), http_parser (multipart content type),
+  provider (state), shared_preferences (settings, identity, queue, caches), geolocator (GPS), image_picker (camera and
+  gallery), path_provider and path (photo folder), connectivity_plus (send when the connection returns),
+  url_launcher (Open in maps), intl (date format); cupertino_icons and flutter_lints come from `flutter create`.
+- **Limitations:** no background sync (only while the app is open), no authentication, no map tiles, English only, check
+  the phone clock (a phone more than 5 minutes ahead of Sri Lanka time gets a permanent 400), cleartext HTTP only in the
+  debug manifest, web not created.
 
 ---
 
@@ -477,3 +511,22 @@ Reference: https://code.claude.com/docs/en/sessions
 - **Stage 4 (done):** `ground-reports/detail.html` shows a photo whose URL starts with `/api/v1/photos/` as an `<img class="report-photo">` inside a link (legacy text kept as text); CSS class added; test in `GroundReportFlowTest`. Phase 6 flow tests still pass (152 total). Next: Stage 5 docs.
 - **Stage 5 (done):** `doc/MOBILE_API.md` (contract copied exactly plus error semantics, retry guidance, examples, run instructions, limitations), new `doc/DEWECS-mobile-api.postman_collection.json` (existing collection untouched), this file (sections 6, 9, 10, 11, 14, 15), README and CLAUDE.md. Left: final verify and smoke run (Stage 6).
 - **Stage 6 (done):** `mvn -B clean verify` green: 154 tests, WAR built, JaCoCo 82% lines / 70% branches. A first clean run exposed a flaky assertion (Jackson dropped trailing zeros, `...11.44`), so `JacksonConfig` now always writes three fraction digits (`ApiTimestampFormatTest`). Smoke run on the `local` profile: reference-data, identify (201 then 200), submit (201, replay 200 same id), PNG upload, report, photo bytes identical, list, 6.5 MB upload gives JSON 413, officer page shows the `<img>`. App stopped by PID. Secret scan clean. Left for the owner: run `doc/neon-gps-precision.sql`, hand `doc/MOBILE_API.md` to the Flutter teammate, push.
+
+---
+
+## Phase 8 log
+
+- **Stage 1 (done):** `mobile/` created with `flutter create --platforms android` (Flutter 3.47.6 at `DevTools\flutter`; pub cache and Gradle home kept in `DevTools` for my sessions). Material 3 light/dark shell with three destinations, `strings.dart`, theme, folders per spec, Android permissions and https/geo `<queries>` in the main manifest, cleartext only in the debug manifest, dependencies added (http, http_parser, provider, shared_preferences, geolocator, image_picker, path_provider, path, connectivity_plus, url_launcher, intl). The Android SDK is not installed yet, so the app cannot run on Android; analyze and test pass.
+- **Stage 2 (done):** pure-Dart `lib/models` (District, ReferenceData, Citizen, GroundReport, ReportPage, ApiProblem, ReportSubmission, contract rules, Sri Lanka time helper) and `lib/api` (`DewecsApi`, `HttpDewecsApi` with UTF-8 byte decoding and one `ApiException` whose `retryable` follows the client rules, `FakeDewecsApi` with replay, photo rules, failure switches and `resetServer`). Fixtures copied from `doc/api-samples`. All contract timestamps are UTC-flagged naive values so they compare consistently on any phone time zone (a bug found by the fake-server test). 42 tests green, analyze clean.
+- **Stage 3 (done):** settings (persisted server address, Test connection, Demo mode switch with confirmation that clears identity and cached data, fake-server switches), cached reference data, identify screen (contract-exact validators in `validators.dart`, NIC never stored, offline message keeps the form), Home/New report gated on identity with a first-run identify push. Provider + ChangeNotifier controllers wired in `AppDependencies`. A widget test caught a real bug (refresh notified during build); fixed by starting it after the first frame. 72 tests green, analyze clean.
+- **Stage 4 (done):** offline queue and sync: `QueuedReport` state machine (sending never persisted), `QueueRepository`, `SyncService` (single-flight, oldest first, back-off 5s/15s/60s/5min, stops only on network/timeout, permanent errors need attention, photo failure never undoes the report, 404 -> reference data decides identity reset vs district gone, same `capturedAt` on every retry), `ConnectivityTrigger` (connection regained, app resumed), device services behind interfaces (geolocator, image_picker), report form with category chips, location with permission messages and manual fields, photo copied into the app folder. Widget tests caught a real bug (a conditional list child shifted the form fields and dropped their validation state). 121 tests green, analyze clean.
+- **Stage 5 (done):** My reports: `ReportsController` (first page cached for offline, load more 20 at a time, prunes sent items once the server list returns their id, 404 resets the identity), Home list (waiting items, sent-but-not-listed items, server reports, status chips with labels and colours, offline banner, empty/error states, Send now, pull-to-refresh), detail screen (action note only when ACTIONED, photo, Open in maps with geo: then OpenStreetMap fallback, edit and send again, delete). The shell explains and opens Identify when the identity disappears. 141 tests green, analyze clean.
+- **Stage 6 (done):** loading, empty and error states on every screen; text-scale 200% test on a 360x740 phone for all screens (overflows fixed by making the prompt and message screens scrollable); Android tap-target, labelled-target and text-contrast guidelines pass in light and dark; malformed server data shows a readable error; debug-only Sync queue screen under Settings. 152 tests green, analyze clean.
+- **Stage 7 (done):** `mobile/tool/smoke.dart` ran 29 checks against the real backend (local profile on port 8092, stopped by PID): reference data, identify (201 then 200, never overwritten), submit with Sinhala text and an em dash, replay (200, same id), photo upload and download, list, and the error cases; all passed, no mismatch with the contract. `mobile/README.md` written, notes section 16 and the viva cheat-sheet extended. Final: analyze clean, 152 tests green, secret scan clean.
+
+---
+
+## Phase 9 log
+
+- **Stages 1-3 (done together, tests green):** `fragments/layout.html` is now a fragment library (`head`, `nav`, `pageHeader`, `flash`, `badge`, `enumLabel`, `time`); all 21 templates use it (lang, viewport, skip link, one `<main id="main">`, favicon as data URI, no duplicated head or flash). `style.css` rebuilt on design tokens with components (buttons, cards, tables, filter grid, forms with aria-invalid/aria-describedby, detail grid, stat tiles, occupancy progress, badges); `static/js/app.js` (10 lines) adds the optional confirm dialog (`data-confirm`) on retract, close, cancel and dismiss. Timestamps render as yyyy-MM-dd HH:mm, empty values as a dash, enums as readable labels. No Java, URL, field name or form action changed; 154 tests pass untouched.
+- **Stage 4-6 (done):** contrast table computed for every text/background token pair (0 failures; one border colour darkened to reach 3:1), all 37 URLs return 200 on the local profile (port 8091, stopped by PID) with no leaked template syntax, Whitelabel or exception text, labels and `for`/`id` pairs checked. 40 screenshots (1280 and 390 px) in `doc/screenshots/`; the 390 px set is taken through a 390 px iframe because headless Edge lays a direct 390 px window out wider. Screenshots caught a CSS specificity bug (coloured buttons rendered as plain ones) and "Sms/Tv" channel labels; both fixed. `doc/DEMO_SCRIPT.md` updated for the new status wording; `backend/README.md` has a UI section. Presentation only: no Java, URL, field name or form action changed.

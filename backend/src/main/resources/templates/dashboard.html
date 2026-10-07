@@ -1,36 +1,41 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Dashboard')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('dashboard')}"></th:block>
 
-<h1>Dashboard</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Dashboard', 'Live counts for the incident desk. Select a tile to see the matching records.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<div class="stat-grid">
-    <a href="/warnings?status=ISSUED" class="stat-tile">
-        <span class="stat-value" th:text="${summary.openWarnings}"></span>
-        <span class="stat-label">Open Warnings</span>
-    </a>
-    <a href="/shelters?status=FULL" class="stat-tile">
-        <span class="stat-value" th:text="${summary.fullShelters}"></span>
-        <span class="stat-label">Full Shelters</span>
-    </a>
-    <a href="/rescue-requests?status=PENDING" class="stat-tile">
-        <span class="stat-value" th:text="${summary.pendingRescueRequests}"></span>
-        <span class="stat-label">Pending Rescue Requests</span>
-    </a>
-    <a href="/relief-supplies?lowStockOnly=true" class="stat-tile">
-        <span class="stat-value" th:text="${summary.lowStockSupplies}"></span>
-        <span class="stat-label">Low-Stock Supplies</span>
-    </a>
-    <a href="/ground-reports?status=PENDING_REVIEW" class="stat-tile">
-        <span class="stat-value" th:text="${summary.unreviewedReports}"></span>
-        <span class="stat-label">Unreviewed Reports</span>
-    </a>
-</div>
+    <div class="stat-grid">
+        <a th:href="@{/warnings(status='ISSUED')}" class="stat-tile stat-warning">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="stat-value" th:text="${summary.openWarnings}">0</span>
+            <span class="stat-label">Open Warnings</span>
+        </a>
+        <a th:href="@{/shelters(status='FULL')}" class="stat-tile stat-shelter">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="stat-value" th:text="${summary.fullShelters}">0</span>
+            <span class="stat-label">Full Shelters</span>
+        </a>
+        <a th:href="@{/rescue-requests(status='PENDING')}" class="stat-tile stat-rescue">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="4.93" y1="19.07" x2="9.17" y2="14.83"/></svg>
+            <span class="stat-value" th:text="${summary.pendingRescueRequests}">0</span>
+            <span class="stat-label">Pending Rescue Requests</span>
+        </a>
+        <a th:href="@{/relief-supplies(lowStockOnly='true')}" class="stat-tile stat-supply">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            <span class="stat-value" th:text="${summary.lowStockSupplies}">0</span>
+            <span class="stat-label">Low-Stock Supplies</span>
+        </a>
+        <a th:href="@{/ground-reports(status='PENDING_REVIEW')}" class="stat-tile stat-report">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span class="stat-value" th:text="${summary.unreviewedReports}">0</span>
+            <span class="stat-label">Unreviewed Reports</span>
+        </a>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>
