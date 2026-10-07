@@ -91,6 +91,25 @@ Last measured: 82% of lines and 70% of branches overall (controller.api 89%/62%,
 All 44 routes are in `../doc/DEWECS.postman_collection.json`. Pages are HTML; successful actions redirect with a
 flash `message`, rule violations redirect with a flash `error`.
 
+## UI (Thymeleaf pages)
+
+No CDN, web font, icon font or JavaScript framework: one stylesheet (`static/css/style.css`), one 10-line script
+(`static/js/app.js`, only the optional confirm dialog) and inline SVG icons. Every page works with JavaScript off.
+
+- **Fragments** in `templates/fragments/layout.html`: `head(title)`, `nav(active)`, `pageHeader(title, subtitle)`,
+  `flash`, `badge(value)` (status, severity or priority as a pill with a readable label), `enumLabel(value)` and
+  `time(value)` (`yyyy-MM-dd HH:mm`, a dash when empty). Always pass every parameter a fragment declares.
+- **Design tokens** are CSS custom properties at the top of `style.css` (colour, spacing, radius, shadow, type scale).
+  Text and background pairs were checked for 4.5:1 contrast; status colour is never the only signal.
+- **Components:** `.btn` (`btn-primary`, `btn-secondary`, `btn-danger`, `btn-link`), `.card`, `.table-wrap` + `table`,
+  `.filter-bar`, `.form-grid` + `.field`, `.detail-grid`, `.stat-tile`, `progress.occupancy`, `.badge`.
+- **Add a page:** copy a list, detail or form template. Start with `head('Title')`, `nav('section')`, then a
+  `<main id="main" class="container">` that contains `pageHeader` and `flash`, and end with the `app.js` script tag.
+  A new status or severity value needs one `.badge-<value>` rule (underscores become dashes). A destructive button gets
+  `data-confirm="Are you sure?"`. Form fields keep the `th:field` bindings and add `aria-invalid` and
+  `aria-describedby` for their error message (see `shelters/form.html`).
+- **Screenshots** of every page at 1280 px and 390 px are in `../doc/screenshots/`.
+
 ## Mobile API
 
 The Flutter ground-reporting app talks to a JSON API under `/api/v1` (contract v1, frozen): reference data,

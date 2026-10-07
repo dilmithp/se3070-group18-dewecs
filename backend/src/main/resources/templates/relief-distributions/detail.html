@@ -1,47 +1,47 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Relief distribution detail</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Relief distribution')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('distributions')}"></th:block>
 
-<h1 th:text="${distribution.resourceName} + ' → ' + ${distribution.shelterName}"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${distribution.resourceName + ' → ' + distribution.shelterName}, null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Status</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${distribution.status})}"></span></dd>
 
-<dl>
-    <dt>Status</dt>
-    <dd th:text="${distribution.status}"></dd>
+            <dt>Quantity</dt>
+            <dd th:text="${distribution.quantity} + ' ' + ${distribution.resourceUnit}"></dd>
 
-    <dt>Quantity</dt>
-    <dd th:text="${distribution.quantity} + ' ' + ${distribution.resourceUnit}"></dd>
+            <dt>Source organization</dt>
+            <dd th:text="${distribution.organizationName}"></dd>
 
-    <dt>Source organization</dt>
-    <dd th:text="${distribution.organizationName}"></dd>
+            <dt>Dispatched at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${distribution.dispatchedAt})}"></th:block></dd>
 
-    <dt>Dispatched at</dt>
-    <dd th:text="${distribution.dispatchedAt}"></dd>
+            <dt>Delivered at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${distribution.deliveredAt})}"></th:block></dd>
+        </dl>
+    </section>
 
-    <dt>Delivered at</dt>
-    <dd th:text="${distribution.deliveredAt} ?: '—'"></dd>
-</dl>
+    <div class="actions">
+        <form th:if="${distribution.status == 'DISPATCHED'}"
+              th:action="@{/relief-distributions/{id}/deliver(id=${distribution.id})}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-primary">Mark delivered</button>
+        </form>
 
-<div class="actions">
-    <form th:if="${distribution.status == 'DISPATCHED'}"
-          th:action="@{/relief-distributions/{id}/deliver(id=${distribution.id})}" method="post" class="inline-form">
-        <button type="submit">Mark delivered</button>
-    </form>
+        <form th:if="${distribution.status == 'DISPATCHED'}"
+              th:action="@{/relief-distributions/{id}/cancel(id=${distribution.id})}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-danger"
+                    data-confirm="Cancel this distribution? The quantity returns to stock.">Cancel</button>
+        </form>
 
-    <form th:if="${distribution.status == 'DISPATCHED'}"
-          th:action="@{/relief-distributions/{id}/cancel(id=${distribution.id})}" method="post" class="inline-form">
-        <button type="submit">Cancel</button>
-    </form>
-
-    <a th:href="@{/relief-distributions}">Back to list</a>
-</div>
+        <a th:href="@{/relief-distributions}" class="btn btn-link">Back to list</a>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

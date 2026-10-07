@@ -1,64 +1,79 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${resourceId != null} ? 'Edit relief supply' : 'New relief supply'">Relief supply form</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${resourceId != null} ? 'Edit relief supply' : 'New relief supply')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('supplies')}"></th:block>
 
-<h1 th:text="${resourceId != null} ? 'Edit relief supply' : 'New relief supply'"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${resourceId != null} ? 'Edit relief supply' : 'New relief supply', null)}"></div>
 
-<form th:action="${resourceId != null} ? @{/relief-supplies/{id}(id=${resourceId})} : @{/relief-supplies}"
-      th:object="${form}" method="post">
+    <form th:action="${resourceId != null} ? @{/relief-supplies/{id}(id=${resourceId})} : @{/relief-supplies}"
+          th:object="${form}" method="post" class="card">
 
-    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+        <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
 
-    <label>District
-        <small th:if="${resourceId != null}">(changing this here has no effect — district is fixed after creation)</small>
-        <select th:field="*{districtId}">
-            <option value="">-- select --</option>
-            <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+        <div class="form-grid">
+            <div class="field" th:classappend="${#fields.hasErrors('districtId')} ? 'has-error'">
+                <label for="districtId">District <span class="req" aria-hidden="true">*</span></label>
+                <span class="help" th:if="${resourceId != null}">Changing this here has no effect: the district is fixed after creation.</span>
+                <select th:field="*{districtId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('districtId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('districtId')} ? 'districtId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+                </select>
+                <p class="field-error" id="districtId-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+            </div>
 
-    <label>Owning organization
-        <small th:if="${resourceId != null}">(changing this here has no effect — organization is fixed after creation)</small>
-        <select th:field="*{organizationId}">
-            <option value="">-- select --</option>
-            <option th:each="o : ${organizations}" th:value="${o.id}" th:text="${o.name}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('organizationId')}" th:errors="*{organizationId}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('organizationId')} ? 'has-error'">
+                <label for="organizationId">Owning organization <span class="req" aria-hidden="true">*</span></label>
+                <span class="help" th:if="${resourceId != null}">Changing this here has no effect: the organization is fixed after creation.</span>
+                <select th:field="*{organizationId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('organizationId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('organizationId')} ? 'organizationId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="o : ${organizations}" th:value="${o.id}" th:text="${o.name}"></option>
+                </select>
+                <p class="field-error" id="organizationId-error" th:if="${#fields.hasErrors('organizationId')}" th:errors="*{organizationId}"></p>
+            </div>
 
-    <label>Name
-        <input type="text" th:field="*{name}"/>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('name')} ? 'has-error'">
+                <label for="name">Name <span class="req" aria-hidden="true">*</span></label>
+                <input type="text" th:field="*{name}" aria-required="true"
+                       th:attr="aria-invalid=${#fields.hasErrors('name')} ? 'true' : null, aria-describedby=${#fields.hasErrors('name')} ? 'name-error' : null"/>
+                <p class="field-error" id="name-error" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></p>
+            </div>
 
-    <label>Category
-        <select th:field="*{type}">
-            <option value="">-- select --</option>
-            <option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.name()}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('type')} ? 'has-error'">
+                <label for="type">Category <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{type}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('type')} ? 'true' : null, aria-describedby=${#fields.hasErrors('type')} ? 'type-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="t : ${types}" th:value="${t.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${t.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="type-error" th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></p>
+            </div>
 
-    <label>Unit
-        <input type="text" th:field="*{unit}" placeholder="kg, boxes, liters..."/>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('unit')}" th:errors="*{unit}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('unit')} ? 'has-error'">
+                <label for="unit">Unit <span class="req" aria-hidden="true">*</span></label>
+                <input type="text" th:field="*{unit}" placeholder="kg, boxes, liters..." aria-required="true"
+                       th:attr="aria-invalid=${#fields.hasErrors('unit')} ? 'true' : null, aria-describedby=${#fields.hasErrors('unit')} ? 'unit-error' : null"/>
+                <p class="field-error" id="unit-error" th:if="${#fields.hasErrors('unit')}" th:errors="*{unit}"></p>
+            </div>
 
-    <label>Quantity
-        <small th:if="${resourceId != null}">(changing this here has no effect — use Restock instead)</small>
-        <input type="number" min="0" th:field="*{quantity}"/>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('quantity')} ? 'has-error'">
+                <label for="quantity">Quantity <span class="req" aria-hidden="true">*</span></label>
+                <span class="help" th:if="${resourceId != null}">Changing this here has no effect: use Restock instead.</span>
+                <input type="number" min="0" th:field="*{quantity}" aria-required="true"
+                       th:attr="aria-invalid=${#fields.hasErrors('quantity')} ? 'true' : null, aria-describedby=${#fields.hasErrors('quantity')} ? 'quantity-error' : null"/>
+                <p class="field-error" id="quantity-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+            </div>
+        </div>
 
-    <button type="submit" th:text="${resourceId != null} ? 'Save changes' : 'Create supply'"></button>
-    <a th:href="${resourceId != null} ? @{/relief-supplies/{id}(id=${resourceId})} : @{/relief-supplies}">Cancel</a>
-</form>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" th:text="${resourceId != null} ? 'Save changes' : 'Create supply'"></button>
+            <a th:href="${resourceId != null} ? @{/relief-supplies/{id}(id=${resourceId})} : @{/relief-supplies}" class="btn btn-link">Cancel</a>
+        </div>
+    </form>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

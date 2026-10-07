@@ -1,64 +1,72 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Rescue Requests</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Rescue requests')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('rescue')}"></th:block>
 
-<h1>Rescue Requests</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Rescue Requests', 'Requests for help, their priority and the team assigned.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <form method="get" th:action="@{/rescue-requests}" class="filter-bar card">
+        <div class="field">
+            <label for="f-status">Status</label>
+            <select id="f-status" name="status">
+                <option value="">All statuses</option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:selected="${s.name() == selectedStatus}"><th:block th:replace="~{fragments/layout :: enumLabel(${s.name()})}"></th:block></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-priority">Priority</label>
+            <select id="f-priority" name="priority">
+                <option value="">All priorities</option>
+                <option th:each="p : ${priorities}" th:value="${p.name()}" th:selected="${p.name() == selectedPriority}"><th:block th:replace="~{fragments/layout :: enumLabel(${p.name()})}"></th:block></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-district">Region</label>
+            <select id="f-district" name="districtId">
+                <option value="">All regions</option>
+                <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                        th:selected="${d.id == selectedDistrictId}"></option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a th:href="@{/rescue-requests/new}" class="btn btn-primary">+ New request</a>
+        </div>
+    </form>
 
-<form method="get" th:action="@{/rescue-requests}" class="filter-bar">
-    <select name="status">
-        <option value="">All statuses</option>
-        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name()}"
-                th:selected="${s.name() == selectedStatus}"></option>
-    </select>
-    <select name="priority">
-        <option value="">All priorities</option>
-        <option th:each="p : ${priorities}" th:value="${p.name()}" th:text="${p.name()}"
-                th:selected="${p.name() == selectedPriority}"></option>
-    </select>
-    <select name="districtId">
-        <option value="">All regions</option>
-        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
-                th:selected="${d.id == selectedDistrictId}"></option>
-    </select>
-    <button type="submit">Filter</button>
-    <a th:href="@{/rescue-requests/new}" class="button">+ New request</a>
-</form>
-
-<table>
-    <thead>
-    <tr>
-        <th>Requester</th>
-        <th>Region</th>
-        <th>Priority</th>
-        <th>Status</th>
-        <th>Assigned team</th>
-        <th>Submitted at</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="r : ${requests}">
-        <td th:text="${r.requesterName}"></td>
-        <td th:text="${r.districtName}"></td>
-        <td th:text="${r.priority}"></td>
-        <td th:text="${r.status}"></td>
-        <td th:text="${r.assignedTeamName} ?: '—'"></td>
-        <td th:text="${r.submittedAt}"></td>
-        <td><a th:href="@{/rescue-requests/{id}(id=${r.id})}">View</a></td>
-    </tr>
-    <tr th:if="${requests.isEmpty()}">
-        <td colspan="7">No rescue requests match this filter.</td>
-    </tr>
-    </tbody>
-</table>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Requester</th>
+                <th scope="col">Region</th>
+                <th scope="col">Priority</th>
+                <th scope="col">Status</th>
+                <th scope="col">Assigned team</th>
+                <th scope="col">Submitted at</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${requests}">
+                <td th:text="${r.requesterName}"></td>
+                <td th:text="${r.districtName}"></td>
+                <td><span th:replace="~{fragments/layout :: badge(${r.priority})}"></span></td>
+                <td><span th:replace="~{fragments/layout :: badge(${r.status})}"></span></td>
+                <td th:text="${r.assignedTeamName} ?: '—'"></td>
+                <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${r.submittedAt})}"></th:block></td>
+                <td><a th:href="@{/rescue-requests/{id}(id=${r.id})}" class="btn btn-link">View</a></td>
+            </tr>
+            <tr th:if="${requests.isEmpty()}">
+                <td colspan="7" class="empty">No rescue requests match this filter. Clear the filters or log a new request.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

@@ -1,63 +1,76 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${warningId != null} ? 'Edit warning' : 'New warning'">Warning form</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${warningId != null} ? 'Edit warning' : 'New warning')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('warnings')}"></th:block>
 
-<h1 th:text="${warningId != null} ? 'Edit draft warning' : 'New draft warning'"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${warningId != null} ? 'Edit draft warning' : 'New draft warning', 'A draft is not visible to the public until it is published.')}"></div>
 
-<form th:action="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}"
-      th:object="${form}" method="post">
+    <form th:action="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}"
+          th:object="${form}" method="post" class="card">
 
-    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+        <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
 
-    <label>Hazard event
-        <select th:field="*{hazardEventId}">
-            <option value="">-- select --</option>
-            <option th:each="he : ${hazardEvents}" th:value="${he.id}"
-                    th:text="${he.hazardType} + ' — ' + ${he.district.name} + ' (' + ${he.occurredAt} + ')'"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('hazardEventId')}" th:errors="*{hazardEventId}"></p>
+        <div class="form-grid">
+            <div class="field" th:classappend="${#fields.hasErrors('hazardEventId')} ? 'has-error'">
+                <label for="hazardEventId">Hazard event <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{hazardEventId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('hazardEventId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('hazardEventId')} ? 'hazardEventId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="he : ${hazardEvents}" th:value="${he.id}"
+                            th:text="${#strings.capitalize(#strings.toLowerCase(he.hazardType)) + ' — ' + he.district.name + ' (' + #temporals.format(he.occurredAt, 'yyyy-MM-dd HH:mm') + ')'}"></option>
+                </select>
+                <p class="field-error" id="hazardEventId-error" th:if="${#fields.hasErrors('hazardEventId')}" th:errors="*{hazardEventId}"></p>
+            </div>
 
-    <label>Issued by
-        <select th:field="*{issuedByUserId}">
-            <option value="">-- select --</option>
-            <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('issuedByUserId')}" th:errors="*{issuedByUserId}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('issuedByUserId')} ? 'has-error'">
+                <label for="issuedByUserId">Issued by <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{issuedByUserId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('issuedByUserId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('issuedByUserId')} ? 'issuedByUserId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                </select>
+                <p class="field-error" id="issuedByUserId-error" th:if="${#fields.hasErrors('issuedByUserId')}" th:errors="*{issuedByUserId}"></p>
+            </div>
 
-    <label>Severity
-        <select th:field="*{severity}">
-            <option value="">-- select --</option>
-            <option th:each="sev : ${severities}" th:value="${sev.name()}" th:text="${sev.name()}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('severity')}" th:errors="*{severity}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('severity')} ? 'has-error'">
+                <label for="severity">Severity <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{severity}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('severity')} ? 'true' : null, aria-describedby=${#fields.hasErrors('severity')} ? 'severity-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="sev : ${severities}" th:value="${sev.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${sev.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="severity-error" th:if="${#fields.hasErrors('severity')}" th:errors="*{severity}"></p>
+            </div>
 
-    <label>Message
-        <textarea th:field="*{message}" rows="4"></textarea>
-    </label>
+            <div class="field">
+                <label for="expiresAt">Expires at</label>
+                <input type="datetime-local" th:field="*{expiresAt}" aria-describedby="expiresAt-help"/>
+                <span class="help" id="expiresAt-help">Optional. An issued warning expires automatically after this time.</span>
+            </div>
 
-    <label>Expires at
-        <input type="datetime-local" th:field="*{expiresAt}"/>
-    </label>
+            <div class="field field-wide">
+                <label for="message">Message</label>
+                <textarea th:field="*{message}" rows="4" aria-describedby="message-help"></textarea>
+                <span class="help" id="message-help">A warning cannot be published without a message.</span>
+            </div>
 
-    <fieldset>
-        <legend>Broadcast channels</legend>
-        <label th:each="ch : ${channels}" class="checkbox-label">
-            <input type="checkbox" th:field="*{broadcastChannels}" th:value="${ch.name()}"/>
-            <span th:text="${ch.name()}"></span>
-        </label>
-    </fieldset>
+            <fieldset class="choice-group field-wide">
+                <legend>Broadcast channels</legend>
+                <label th:each="ch : ${channels}" class="checkbox-label">
+                    <input type="checkbox" th:field="*{broadcastChannels}" th:value="${ch.name()}"/>
+                    <span th:text="${#strings.replace(ch.name(), '_', ' ')}"></span>
+                </label>
+            </fieldset>
+        </div>
 
-    <button type="submit">Save draft</button>
-    <a th:href="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}">Cancel</a>
-</form>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save draft</button>
+            <a th:href="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}" class="btn btn-link">Cancel</a>
+        </div>
+    </form>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

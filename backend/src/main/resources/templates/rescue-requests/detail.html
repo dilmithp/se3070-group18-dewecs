@@ -1,72 +1,76 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Rescue request detail</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Rescue request')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('rescue')}"></th:block>
 
-<h1 th:text="'Rescue request — ' + ${request.requesterName}"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${'Rescue request — ' + request.requesterName}, null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Status</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${request.status})}"></span></dd>
 
-<dl>
-    <dt>Status</dt>
-    <dd th:text="${request.status}"></dd>
+            <dt>Priority</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${request.priority})}"></span></dd>
 
-    <dt>Priority</dt>
-    <dd th:text="${request.priority}"></dd>
+            <dt>Region</dt>
+            <dd th:text="${request.districtName}"></dd>
 
-    <dt>Region</dt>
-    <dd th:text="${request.districtName}"></dd>
+            <dt>Requester phone</dt>
+            <dd th:text="${request.requesterPhone}"></dd>
 
-    <dt>Requester phone</dt>
-    <dd th:text="${request.requesterPhone}"></dd>
+            <dt>GPS</dt>
+            <dd th:text="(${request.gpsLat} != null and ${request.gpsLng} != null) ? (${request.gpsLat} + ', ' + ${request.gpsLng}) : '—'"></dd>
 
-    <dt>GPS</dt>
-    <dd th:text="(${request.gpsLat} != null and ${request.gpsLng} != null) ? (${request.gpsLat} + ', ' + ${request.gpsLng}) : '—'"></dd>
+            <dt>Description</dt>
+            <dd th:text="${request.description}"></dd>
 
-    <dt>Description</dt>
-    <dd th:text="${request.description}"></dd>
+            <dt>Assigned team</dt>
+            <dd th:text="${request.assignedTeamName} ?: '—'"></dd>
 
-    <dt>Assigned team</dt>
-    <dd th:text="${request.assignedTeamName} ?: '—'"></dd>
+            <dt>Submitted at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${request.submittedAt})}"></th:block></dd>
 
-    <dt>Submitted at</dt>
-    <dd th:text="${request.submittedAt}"></dd>
+            <dt>Assigned at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${request.assignedAt})}"></th:block></dd>
 
-    <dt>Assigned at</dt>
-    <dd th:text="${request.assignedAt} ?: '—'"></dd>
+            <dt>Completed at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${request.completedAt})}"></th:block></dd>
+        </dl>
+    </section>
 
-    <dt>Completed at</dt>
-    <dd th:text="${request.completedAt} ?: '—'"></dd>
-</dl>
+    <section class="card" th:if="${request.status == 'PENDING'}">
+        <h2>Assign a team</h2>
+        <form th:action="@{/rescue-requests/{id}/assign(id=${request.id})}" method="post" class="inline-form">
+            <div class="field">
+                <label for="teamId">Team</label>
+                <select id="teamId" name="teamId" aria-describedby="teamId-help">
+                    <option th:each="t : ${availableTeams}" th:value="${t.id}" th:text="${t.name}"></option>
+                </select>
+                <span class="help" id="teamId-help" th:if="${#lists.isEmpty(availableTeams)}">No team is available right now.</span>
+            </div>
+            <button type="submit" class="btn btn-primary">Assign</button>
+        </form>
+    </section>
 
-<div class="actions">
-    <form th:if="${request.status == 'PENDING'}" th:action="@{/rescue-requests/{id}/assign(id=${request.id})}"
-          method="post" class="inline-form">
-        <label>Team
-            <select name="teamId">
-                <option th:each="t : ${availableTeams}" th:value="${t.id}" th:text="${t.name}"></option>
-            </select>
-        </label>
-        <button type="submit">Assign</button>
-    </form>
+    <div class="actions">
+        <form th:if="${request.status == 'ASSIGNED'}" th:action="@{/rescue-requests/{id}/complete(id=${request.id})}"
+              method="post" class="inline-form">
+            <button type="submit" class="btn btn-primary">Complete</button>
+        </form>
 
-    <form th:if="${request.status == 'ASSIGNED'}" th:action="@{/rescue-requests/{id}/complete(id=${request.id})}"
-          method="post" class="inline-form">
-        <button type="submit">Complete</button>
-    </form>
+        <form th:if="${request.status == 'PENDING' or request.status == 'ASSIGNED'}"
+              th:action="@{/rescue-requests/{id}/cancel(id=${request.id})}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-danger"
+                    data-confirm="Cancel this rescue request? An assigned team becomes available again.">Cancel</button>
+        </form>
 
-    <form th:if="${request.status == 'PENDING' or request.status == 'ASSIGNED'}"
-          th:action="@{/rescue-requests/{id}/cancel(id=${request.id})}" method="post" class="inline-form">
-        <button type="submit">Cancel</button>
-    </form>
-
-    <a th:href="@{/rescue-requests}">Back to list</a>
-</div>
+        <a th:href="@{/rescue-requests}" class="btn btn-link">Back to list</a>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

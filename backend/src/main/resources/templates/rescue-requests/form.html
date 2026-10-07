@@ -1,60 +1,79 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>New rescue request</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('New rescue request')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('rescue')}"></th:block>
 
-<h1>New rescue request</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('New rescue request', 'Log a call for help so a team can be assigned.')}"></div>
 
-<form th:action="@{/rescue-requests}" th:object="${form}" method="post">
+    <form th:action="@{/rescue-requests}" th:object="${form}" method="post" class="card">
 
-    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+        <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
 
-    <label>District
-        <select th:field="*{districtId}">
-            <option value="">-- select --</option>
-            <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+        <div class="form-grid">
+            <div class="field" th:classappend="${#fields.hasErrors('districtId')} ? 'has-error'">
+                <label for="districtId">District <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{districtId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('districtId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('districtId')} ? 'districtId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+                </select>
+                <p class="field-error" id="districtId-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+            </div>
 
-    <label>Requester name
-        <input type="text" th:field="*{requesterName}"/>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('requesterName')}" th:errors="*{requesterName}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('priority')} ? 'has-error'">
+                <label for="priority">Priority <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{priority}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null, aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="p : ${priorities}" th:value="${p.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${p.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="priority-error" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}"></p>
+            </div>
 
-    <label>Requester phone
-        <input type="text" th:field="*{requesterPhone}"/>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('requesterPhone')}" th:errors="*{requesterPhone}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('requesterName')} ? 'has-error'">
+                <label for="requesterName">Requester name <span class="req" aria-hidden="true">*</span></label>
+                <input type="text" th:field="*{requesterName}" aria-required="true"
+                       th:attr="aria-invalid=${#fields.hasErrors('requesterName')} ? 'true' : null, aria-describedby=${#fields.hasErrors('requesterName')} ? 'requesterName-error' : null"/>
+                <p class="field-error" id="requesterName-error" th:if="${#fields.hasErrors('requesterName')}" th:errors="*{requesterName}"></p>
+            </div>
 
-    <label>GPS latitude (optional)
-        <input type="number" step="any" th:field="*{gpsLat}"/>
-    </label>
+            <div class="field" th:classappend="${#fields.hasErrors('requesterPhone')} ? 'has-error'">
+                <label for="requesterPhone">Requester phone <span class="req" aria-hidden="true">*</span></label>
+                <input type="text" th:field="*{requesterPhone}" aria-required="true"
+                       th:attr="aria-invalid=${#fields.hasErrors('requesterPhone')} ? 'true' : null, aria-describedby=${#fields.hasErrors('requesterPhone')} ? 'requesterPhone-error' : null"/>
+                <p class="field-error" id="requesterPhone-error" th:if="${#fields.hasErrors('requesterPhone')}" th:errors="*{requesterPhone}"></p>
+            </div>
 
-    <label>GPS longitude (optional)
-        <input type="number" step="any" th:field="*{gpsLng}"/>
-    </label>
+            <div class="field" th:classappend="${#fields.hasErrors('gpsLat')} ? 'has-error'">
+                <label for="gpsLat">GPS latitude (optional)</label>
+                <input type="number" step="any" th:field="*{gpsLat}" aria-describedby="gpsLat-help"/>
+                <span class="help" id="gpsLat-help">Between -90 and 90.</span>
+                <p class="field-error" th:if="${#fields.hasErrors('gpsLat')}" th:errors="*{gpsLat}"></p>
+            </div>
 
-    <label>Description
-        <textarea th:field="*{description}" rows="4"></textarea>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('gpsLng')} ? 'has-error'">
+                <label for="gpsLng">GPS longitude (optional)</label>
+                <input type="number" step="any" th:field="*{gpsLng}" aria-describedby="gpsLng-help"/>
+                <span class="help" id="gpsLng-help">Between -180 and 180.</span>
+                <p class="field-error" th:if="${#fields.hasErrors('gpsLng')}" th:errors="*{gpsLng}"></p>
+            </div>
 
-    <label>Priority
-        <select th:field="*{priority}">
-            <option value="">-- select --</option>
-            <option th:each="p : ${priorities}" th:value="${p.name()}" th:text="${p.name()}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('priority')}" th:errors="*{priority}"></p>
+            <div class="field field-wide" th:classappend="${#fields.hasErrors('description')} ? 'has-error'">
+                <label for="description">Description <span class="req" aria-hidden="true">*</span></label>
+                <textarea th:field="*{description}" rows="4" aria-required="true"
+                          th:attr="aria-invalid=${#fields.hasErrors('description')} ? 'true' : null, aria-describedby=${#fields.hasErrors('description')} ? 'description-error' : null"></textarea>
+                <p class="field-error" id="description-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+            </div>
+        </div>
 
-    <button type="submit">Submit request</button>
-    <a th:href="@{/rescue-requests}">Cancel</a>
-</form>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Submit request</button>
+            <a th:href="@{/rescue-requests}" class="btn btn-link">Cancel</a>
+        </div>
+    </form>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

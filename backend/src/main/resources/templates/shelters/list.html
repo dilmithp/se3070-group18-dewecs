@@ -1,57 +1,69 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Shelters</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Shelters')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('shelters')}"></th:block>
 
-<h1>Shelters</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Shelters', 'Capacity and occupancy of every evacuation shelter.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <form method="get" th:action="@{/shelters}" class="filter-bar card">
+        <div class="field">
+            <label for="f-status">Status</label>
+            <select id="f-status" name="status">
+                <option value="">All statuses</option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:selected="${s.name() == selectedStatus}"><th:block th:replace="~{fragments/layout :: enumLabel(${s.name()})}"></th:block></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-district">Region</label>
+            <select id="f-district" name="districtId">
+                <option value="">All regions</option>
+                <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                        th:selected="${d.id == selectedDistrictId}"></option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a th:href="@{/shelters/new}" class="btn btn-primary">+ New shelter</a>
+        </div>
+    </form>
 
-<form method="get" th:action="@{/shelters}" class="filter-bar">
-    <select name="status">
-        <option value="">All statuses</option>
-        <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.name()}"
-                th:selected="${s.name() == selectedStatus}"></option>
-    </select>
-    <select name="districtId">
-        <option value="">All regions</option>
-        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
-                th:selected="${d.id == selectedDistrictId}"></option>
-    </select>
-    <button type="submit">Filter</button>
-    <a th:href="@{/shelters/new}" class="button">+ New shelter</a>
-</form>
-
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Region</th>
-        <th>Occupancy</th>
-        <th>Status</th>
-        <th>Organization</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="s : ${shelters}">
-        <td th:text="${s.name}"></td>
-        <td th:text="${s.districtName}"></td>
-        <td th:text="${s.currentOccupancy} + ' / ' + ${s.capacity}"></td>
-        <td th:text="${s.status}"></td>
-        <td th:text="${s.organizationName}"></td>
-        <td><a th:href="@{/shelters/{id}(id=${s.id})}">View</a></td>
-    </tr>
-    <tr th:if="${shelters.isEmpty()}">
-        <td colspan="6">No shelters match this filter.</td>
-    </tr>
-    </tbody>
-</table>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Region</th>
+                <th scope="col">Occupancy</th>
+                <th scope="col">Status</th>
+                <th scope="col">Organization</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${shelters}">
+                <td th:text="${s.name}"></td>
+                <td th:text="${s.districtName}"></td>
+                <td>
+                    <div class="occupancy-row">
+                        <span class="nowrap" th:text="${s.currentOccupancy} + ' / ' + ${s.capacity}"></span>
+                        <progress class="occupancy" th:classappend="${s.currentOccupancy >= s.capacity} ? 'is-full'"
+                                  th:attr="max=${s.capacity},value=${s.currentOccupancy},aria-label='Occupancy of ' + ${s.name}"></progress>
+                    </div>
+                </td>
+                <td><span th:replace="~{fragments/layout :: badge(${s.status})}"></span></td>
+                <td th:text="${s.organizationName}"></td>
+                <td><a th:href="@{/shelters/{id}(id=${s.id})}" class="btn btn-link">View</a></td>
+            </tr>
+            <tr th:if="${shelters.isEmpty()}">
+                <td colspan="6" class="empty">No shelters match this filter. Clear the filters or add a shelter.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

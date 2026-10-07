@@ -1,20 +1,19 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Something went wrong</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Something went wrong')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('none')}"></th:block>
 
-<h1><span th:text="${status}">500</span> &mdash; <span th:text="${error}">Error</span></h1>
-
-<p class="flash-error" th:text="${message}">Something went wrong.</p>
-
-<p>
-    <a href="javascript:history.back()">Go back</a> |
-    <a th:href="@{/dashboard}">Back to the dashboard</a>
-</p>
+<main id="main" class="container">
+    <section class="card error-page">
+        <p class="error-code" th:text="${status}">500</p>
+        <h1 th:text="${error}">Error</h1>
+        <p class="flash-error" role="alert" th:text="${message}">Something went wrong.</p>
+        <div class="actions">
+            <a th:href="@{/dashboard}" class="btn btn-primary">Back to the dashboard</a>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

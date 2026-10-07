@@ -1,17 +1,73 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!--
+  Shared page fragments. Every page uses them like this:
+
+    <head th:replace="~{fragments/layout :: head('Page title')}"></head>
+    <th:block th:replace="~{fragments/layout :: nav('warnings')}"></th:block>
+    <main id="main" class="container">
+      <div th:replace="~{fragments/layout :: pageHeader('Title', 'Optional subtitle or null')}"></div>
+      <div th:replace="~{fragments/layout :: flash}"></div>
+      ...
+    </main>
+
+  Active section keys for nav: dashboard, warnings, shelters, rescue, supplies, distributions, reports (or none).
+  Thymeleaf fails at render time when a call passes fewer arguments than the fragment declares, so always pass all.
+-->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' | DEWECS'">DEWECS</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2312263f'/%3E%3Cpath d='M16 5l9 4v7c0 5-4 8-9 10-5-2-9-5-9-10V9z' fill='%23ffffff'/%3E%3C/svg%3E">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
 <body>
-<div th:fragment="nav">
-    <nav class="navbar">
-        <a href="/dashboard" class="brand">DEWECS</a>
-        <a href="/dashboard">Dashboard</a>
-        <a href="/warnings">Warnings</a>
-        <a href="/shelters">Shelters</a>
-        <a href="/rescue-requests">Rescue Requests</a>
-        <a href="/relief-supplies">Relief Supplies</a>
-        <a href="/relief-distributions">Distributions</a>
-        <a href="/ground-reports">Ground Reports</a>
-    </nav>
+
+<!-- Skip link, header and main navigation. The active link gets aria-current="page". -->
+<th:block th:fragment="nav(active)">
+    <a class="skip-link" href="#main">Skip to main content</a>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a th:href="@{/dashboard}" class="brand">DEWECS</a>
+            <nav class="site-nav" aria-label="Main">
+                <a th:href="@{/dashboard}" th:attr="aria-current=${active == 'dashboard'} ? 'page' : null">Dashboard</a>
+                <a th:href="@{/warnings}" th:attr="aria-current=${active == 'warnings'} ? 'page' : null">Warnings</a>
+                <a th:href="@{/shelters}" th:attr="aria-current=${active == 'shelters'} ? 'page' : null">Shelters</a>
+                <a th:href="@{/rescue-requests}" th:attr="aria-current=${active == 'rescue'} ? 'page' : null">Rescue Requests</a>
+                <a th:href="@{/relief-supplies}" th:attr="aria-current=${active == 'supplies'} ? 'page' : null">Relief Supplies</a>
+                <a th:href="@{/relief-distributions}" th:attr="aria-current=${active == 'distributions'} ? 'page' : null">Distributions</a>
+                <a th:href="@{/ground-reports}" th:attr="aria-current=${active == 'reports'} ? 'page' : null">Ground Reports</a>
+            </nav>
+        </div>
+    </header>
+</th:block>
+
+<!-- Page title with an optional subtitle (pass null for none). -->
+<div th:fragment="pageHeader(title, subtitle)" class="page-header">
+    <h1 th:text="${title}">Title</h1>
+    <p class="subtitle" th:if="${subtitle != null and !#strings.isEmpty(subtitle)}" th:text="${subtitle}"></p>
 </div>
+
+<!-- Flash messages set by the controllers after an action: "message" (success) and "error" (rule violation). -->
+<th:block th:fragment="flash">
+    <p th:if="${message}" class="flash" role="status" th:text="${message}"></p>
+    <p th:if="${error}" class="flash-error" role="alert" th:text="${error}"></p>
+</th:block>
+
+<!--
+  Status, severity or priority as a coloured pill. The text label is always shown: colour only reinforces it.
+  PENDING_REVIEW -> "Pending review", class badge-pending-review (defined in style.css).
+-->
+<span th:fragment="badge(value)" th:if="${value != null}" class="badge"
+      th:classappend="'badge-' + ${#strings.toLowerCase(#strings.replace('' + value, '_', '-'))}"
+      th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace('' + value, '_', ' ')))}">Status</span>
+
+<!-- A readable label for an enum value (for options and plain text): MEDICAL_SUPPLIES -> "Medical supplies". -->
+<th:block th:fragment="enumLabel(value)"
+          th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace('' + value, '_', ' ')))}">Value</th:block>
+
+<!-- A timestamp as yyyy-MM-dd HH:mm (the same in every browser language), or a dash when empty. -->
+<th:block th:fragment="time(value)" th:text="${#temporals.format(value, 'yyyy-MM-dd HH:mm')} ?: '—'">time</th:block>
+
 </body>
 </html>

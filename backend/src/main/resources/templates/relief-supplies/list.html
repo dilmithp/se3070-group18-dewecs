@@ -1,62 +1,68 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Relief Supplies</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Relief supplies')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('supplies')}"></th:block>
 
-<h1>Relief Supplies</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Relief Supplies', 'Stock held by each organization. Low and empty stock is flagged.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <form method="get" th:action="@{/relief-supplies}" class="filter-bar card">
+        <div class="field">
+            <label for="f-type">Category</label>
+            <select id="f-type" name="type">
+                <option value="">All categories</option>
+                <option th:each="t : ${types}" th:value="${t.name()}" th:selected="${t.name() == selectedType}"><th:block th:replace="~{fragments/layout :: enumLabel(${t.name()})}"></th:block></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-district">Region</label>
+            <select id="f-district" name="districtId">
+                <option value="">All regions</option>
+                <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                        th:selected="${d.id == selectedDistrictId}"></option>
+            </select>
+        </div>
+        <label class="checkbox-label"><input type="checkbox" name="lowStockOnly" value="true" th:checked="${lowStockOnly}"/> Low stock only</label>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-secondary">Filter</button>
+            <a th:href="@{/relief-supplies/new}" class="btn btn-primary">+ New supply</a>
+        </div>
+    </form>
 
-<form method="get" th:action="@{/relief-supplies}" class="filter-bar">
-    <select name="type">
-        <option value="">All categories</option>
-        <option th:each="t : ${types}" th:value="${t.name()}" th:text="${t.name()}"
-                th:selected="${t.name() == selectedType}"></option>
-    </select>
-    <select name="districtId">
-        <option value="">All regions</option>
-        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
-                th:selected="${d.id == selectedDistrictId}"></option>
-    </select>
-    <label><input type="checkbox" name="lowStockOnly" value="true" th:checked="${lowStockOnly}"/> Low stock only</label>
-    <button type="submit">Filter</button>
-    <a th:href="@{/relief-supplies/new}" class="button">+ New supply</a>
-</form>
-
-<table>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Category</th>
-        <th>Region</th>
-        <th>Stock</th>
-        <th>Organization</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="s : ${supplies}">
-        <td th:text="${s.name}"></td>
-        <td th:text="${s.type}"></td>
-        <td th:text="${s.districtName}"></td>
-        <td>
-            <span th:text="${s.quantity} + ' ' + ${s.unit}"></span>
-            <span th:if="${s.outOfStock}" class="badge badge-danger">OUT OF STOCK</span>
-            <span th:if="${!s.outOfStock and s.lowStock}" class="badge badge-warning">LOW STOCK</span>
-        </td>
-        <td th:text="${s.organizationName}"></td>
-        <td><a th:href="@{/relief-supplies/{id}(id=${s.id})}">View</a></td>
-    </tr>
-    <tr th:if="${supplies.isEmpty()}">
-        <td colspan="6">No relief supplies match this filter.</td>
-    </tr>
-    </tbody>
-</table>
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Category</th>
+                <th scope="col">Region</th>
+                <th scope="col">Stock</th>
+                <th scope="col">Organization</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="s : ${supplies}">
+                <td th:text="${s.name}"></td>
+                <td><th:block th:replace="~{fragments/layout :: enumLabel(${s.type})}"></th:block></td>
+                <td th:text="${s.districtName}"></td>
+                <td>
+                    <span th:text="${s.quantity} + ' ' + ${s.unit}"></span>
+                    <span th:if="${s.outOfStock}" class="badge badge-danger">OUT OF STOCK</span>
+                    <span th:if="${!s.outOfStock and s.lowStock}" class="badge badge-warning">LOW STOCK</span>
+                </td>
+                <td th:text="${s.organizationName}"></td>
+                <td><a th:href="@{/relief-supplies/{id}(id=${s.id})}" class="btn btn-link">View</a></td>
+            </tr>
+            <tr th:if="${supplies.isEmpty()}">
+                <td colspan="6" class="empty">No relief supplies match this filter. Clear the filters or add a supply.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

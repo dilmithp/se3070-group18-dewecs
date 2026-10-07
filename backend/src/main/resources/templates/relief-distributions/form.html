@@ -1,43 +1,52 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>New relief distribution</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('New relief distribution')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('distributions')}"></th:block>
 
-<h1>New relief distribution</h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('New relief distribution', 'Stock is deducted when the distribution is dispatched.')}"></div>
 
-<form th:action="@{/relief-distributions}" th:object="${form}" method="post">
+    <form th:action="@{/relief-distributions}" th:object="${form}" method="post" class="card">
 
-    <p class="form-errors" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+        <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
 
-    <label>Relief supply
-        <select th:field="*{resourceId}">
-            <option value="">-- select --</option>
-            <option th:each="r : ${supplies}" th:value="${r.id}"
-                    th:text="${r.name} + ' (' + ${r.quantity} + ' ' + ${r.unit} + ' available)'"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('resourceId')}" th:errors="*{resourceId}"></p>
+        <div class="form-grid">
+            <div class="field" th:classappend="${#fields.hasErrors('resourceId')} ? 'has-error'">
+                <label for="resourceId">Relief supply <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{resourceId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('resourceId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('resourceId')} ? 'resourceId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="r : ${supplies}" th:value="${r.id}"
+                            th:text="${r.name} + ' (' + ${r.quantity} + ' ' + ${r.unit} + ' available)'"></option>
+                </select>
+                <p class="field-error" id="resourceId-error" th:if="${#fields.hasErrors('resourceId')}" th:errors="*{resourceId}"></p>
+            </div>
 
-    <label>Destination shelter
-        <select th:field="*{shelterId}">
-            <option value="">-- select --</option>
-            <option th:each="sh : ${shelters}" th:value="${sh.id}" th:text="${sh.name}"></option>
-        </select>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('shelterId')}" th:errors="*{shelterId}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('shelterId')} ? 'has-error'">
+                <label for="shelterId">Destination shelter <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{shelterId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('shelterId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('shelterId')} ? 'shelterId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="sh : ${shelters}" th:value="${sh.id}" th:text="${sh.name}"></option>
+                </select>
+                <p class="field-error" id="shelterId-error" th:if="${#fields.hasErrors('shelterId')}" th:errors="*{shelterId}"></p>
+            </div>
 
-    <label>Quantity
-        <input type="number" min="1" th:field="*{quantity}"/>
-    </label>
-    <p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+            <div class="field" th:classappend="${#fields.hasErrors('quantity')} ? 'has-error'">
+                <label for="quantity">Quantity <span class="req" aria-hidden="true">*</span></label>
+                <input type="number" min="1" th:field="*{quantity}" aria-required="true"
+                       th:attr="aria-invalid=${#fields.hasErrors('quantity')} ? 'true' : null, aria-describedby=${#fields.hasErrors('quantity')} ? 'quantity-error' : null"/>
+                <p class="field-error" id="quantity-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+            </div>
+        </div>
 
-    <button type="submit">Dispatch</button>
-    <a th:href="@{/relief-distributions}">Cancel</a>
-</form>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Dispatch</button>
+            <a th:href="@{/relief-distributions}" class="btn btn-link">Cancel</a>
+        </div>
+    </form>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>

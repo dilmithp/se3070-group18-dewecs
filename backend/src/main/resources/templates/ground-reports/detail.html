@@ -1,76 +1,89 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Ground report detail</title>
-    <link rel="stylesheet" th:href="@{/css/style.css}">
-</head>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Ground report')}"></head>
 <body>
-<div th:replace="~{fragments/layout :: nav}"></div>
+<th:block th:replace="~{fragments/layout :: nav('reports')}"></th:block>
 
-<h1 th:text="'Ground report — ' + ${report.reporterName}"></h1>
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader(${'Ground report — ' + report.reporterName}, null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-<p th:if="${message}" class="flash" th:text="${message}"></p>
-<p th:if="${error}" class="flash-error" th:text="${error}"></p>
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Status</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${report.status})}"></span></dd>
 
-<dl>
-    <dt>Status</dt>
-    <dd th:text="${report.status}"></dd>
+            <dt>Category</dt>
+            <dd><th:block th:replace="~{fragments/layout :: enumLabel(${report.category})}"></th:block></dd>
 
-    <dt>Category</dt>
-    <dd th:text="${report.category}"></dd>
+            <dt>Region</dt>
+            <dd th:text="${report.districtName}"></dd>
 
-    <dt>Region</dt>
-    <dd th:text="${report.districtName}"></dd>
+            <dt>Reporter phone</dt>
+            <dd th:text="${report.reporterPhone}"></dd>
 
-    <dt>Reporter phone</dt>
-    <dd th:text="${report.reporterPhone}"></dd>
+            <dt>GPS</dt>
+            <dd>
+                <span th:text="${report.gpsLat} + ', ' + ${report.gpsLng}"></span>
+                <a th:if="${report.gpsLat != null and report.gpsLng != null}" class="btn btn-secondary btn-sm"
+                   th:href="${'https://www.openstreetmap.org/?mlat=' + report.gpsLat + '&amp;mlon=' + report.gpsLng + '#map=15/' + report.gpsLat + '/' + report.gpsLng}"
+                   target="_blank" rel="noopener noreferrer">Open in map<span class="visually-hidden"> (opens OpenStreetMap in a new tab)</span></a>
+            </dd>
 
-    <dt>GPS</dt>
-    <dd th:text="${report.gpsLat} + ', ' + ${report.gpsLng}"></dd>
+            <dt>Photo</dt>
+            <dd>
+                <a th:if="${report.photoUrl != null and #strings.startsWith(report.photoUrl, '/api/v1/photos/')}" th:href="@{${report.photoUrl}}">
+                    <img class="report-photo" th:src="@{${report.photoUrl}}" alt="Photo attached to this ground report">
+                </a>
+                <span th:unless="${report.photoUrl != null and #strings.startsWith(report.photoUrl, '/api/v1/photos/')}" th:text="${report.photoUrl} ?: '—'"></span>
+            </dd>
 
-    <dt>Photo</dt>
-    <dd>
-        <a th:if="${report.photoUrl != null and #strings.startsWith(report.photoUrl, '/api/v1/photos/')}" th:href="@{${report.photoUrl}}">
-            <img class="report-photo" th:src="@{${report.photoUrl}}" alt="Photo attached to this ground report">
-        </a>
-        <span th:unless="${report.photoUrl != null and #strings.startsWith(report.photoUrl, '/api/v1/photos/')}" th:text="${report.photoUrl} ?: '—'"></span>
-    </dd>
+            <dt>Description</dt>
+            <dd th:text="${report.description}"></dd>
 
-    <dt>Description</dt>
-    <dd th:text="${report.description}"></dd>
+            <dt>Reviewed/actioned by</dt>
+            <dd th:text="${report.verifiedByName} ?: '—'"></dd>
 
-    <dt>Reviewed/actioned by</dt>
-    <dd th:text="${report.verifiedByName} ?: '—'"></dd>
+            <dt>Action note</dt>
+            <dd th:text="${report.actionNote} ?: '—'"></dd>
 
-    <dt>Action note</dt>
-    <dd th:text="${report.actionNote} ?: '—'"></dd>
+            <dt>Submitted at</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${report.submittedAt})}"></th:block></dd>
+        </dl>
+    </section>
 
-    <dt>Submitted at</dt>
-    <dd th:text="${report.submittedAt}"></dd>
-</dl>
+    <section class="card review-panel" th:if="${report.status == 'PENDING_REVIEW' or report.status == 'VERIFIED'}">
+        <h2>Review</h2>
+        <form method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="reviewingUserId">Reviewing officer</label>
+                    <select id="reviewingUserId" name="reviewingUserId">
+                        <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                    </select>
+                </div>
+                <div class="field field-wide" th:if="${report.status == 'VERIFIED'}">
+                    <label for="note">Action note</label>
+                    <textarea id="note" name="note" rows="3" aria-describedby="note-help"></textarea>
+                    <span class="help" id="note-help">Required to record that action was taken. The citizen sees this note in the app.</span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button th:if="${report.status == 'PENDING_REVIEW'}" type="submit" class="btn btn-primary"
+                        th:formaction="@{/ground-reports/{id}/review(id=${report.id})}">Mark reviewed</button>
+                <button th:if="${report.status == 'VERIFIED'}" type="submit" class="btn btn-primary"
+                        th:formaction="@{/ground-reports/{id}/action(id=${report.id})}">Action</button>
+                <button type="submit" class="btn btn-danger"
+                        th:formaction="@{/ground-reports/{id}/dismiss(id=${report.id})}"
+                        data-confirm="Dismiss this report? It will be marked as not accepted.">Dismiss</button>
+            </div>
+        </form>
+    </section>
 
-<div class="actions" th:if="${report.status == 'PENDING_REVIEW' or report.status == 'VERIFIED'}">
-    <h2>Review</h2>
-    <form method="post">
-        <label>Reviewing officer
-            <select name="reviewingUserId">
-                <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
-            </select>
-        </label>
-
-        <label th:if="${report.status == 'VERIFIED'}">Action note
-            <textarea name="note" rows="3"></textarea>
-        </label>
-
-        <button th:if="${report.status == 'PENDING_REVIEW'}" type="submit"
-                th:formaction="@{/ground-reports/{id}/review(id=${report.id})}">Mark reviewed</button>
-        <button th:if="${report.status == 'VERIFIED'}" type="submit"
-                th:formaction="@{/ground-reports/{id}/action(id=${report.id})}">Action</button>
-        <button type="submit" th:formaction="@{/ground-reports/{id}/dismiss(id=${report.id})}">Dismiss</button>
-    </form>
-</div>
-
-<a th:href="@{/ground-reports}">Back to list</a>
+    <div class="actions">
+        <a th:href="@{/ground-reports}" class="btn btn-link">Back to list</a>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
 </body>
 </html>
