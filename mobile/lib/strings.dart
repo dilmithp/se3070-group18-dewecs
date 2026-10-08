@@ -7,6 +7,8 @@ class S {
   // Navigation
   static const navHome = 'My reports';
   static const navNewReport = 'New report';
+  static const navShelters = 'Shelters';
+  static const navRescue = 'Rescue';
   static const navSettings = 'Settings';
 
   // Generic
