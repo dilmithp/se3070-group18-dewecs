@@ -8,6 +8,7 @@ import '../widgets/filter_bar.dart';
 import '../widgets/rescue_card.dart';
 import '../widgets/state_views.dart';
 import 'rescue_detail_screen.dart';
+import 'rescue_form_screen.dart';
 
 /// Rescue requests: filter by status, priority and district, see who is waiting for a team, open one for its detail.
 class RescueListScreen extends StatefulWidget {
@@ -46,6 +47,14 @@ class _RescueListScreenState extends State<RescueListScreen> {
     }
   }
 
+  Future<void> _create() async {
+    final controller = context.read<RescueRequestsController>();
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const RescueFormScreen()));
+    if (mounted) {
+      controller.refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<RescueRequestsController>();
@@ -75,7 +84,7 @@ class _RescueListScreenState extends State<RescueListScreen> {
     } else {
       content = ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 24),
+        padding: const EdgeInsets.only(bottom: 88),
         children: [
           if (error != null)
             InfoBanner(
@@ -95,7 +104,7 @@ class _RescueListScreenState extends State<RescueListScreen> {
       );
     }
 
-    return Column(
+    final column = Column(
       children: [
         if (controller.loaded || controller.districts.isNotEmpty)
           FilterBar(
@@ -132,6 +141,15 @@ class _RescueListScreenState extends State<RescueListScreen> {
           ),
         ),
       ],
+    );
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: column,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _create,
+        icon: const Icon(Icons.add),
+        label: const Text(S.newRescueButton),
+      ),
     );
   }
 }

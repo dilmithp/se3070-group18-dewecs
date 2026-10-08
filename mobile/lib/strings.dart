@@ -339,6 +339,27 @@ class S {
   static const keepRequest = 'Keep it';
   static const rescueLoadOneFailed = 'The rescue request could not be loaded.';
 
+  // Rescue request form
+  static const newRescueTitle = 'New rescue request';
+  static const newRescueButton = 'New request';
+  static const submitRescue = 'Submit request';
+  static const priorityLabelField = 'Priority';
+  static const requesterNameLabel = 'Requester name';
+  static const requesterPhoneLabel = 'Requester phone';
+  static const gpsLatLabel = 'GPS latitude (optional)';
+  static const gpsLngLabel = 'GPS longitude (optional)';
+  static const gpsLatHelp = 'Between -90 and 90.';
+  static const gpsLngHelp = 'Between -180 and 180.';
+  static const rescueDescriptionLabel = 'Description';
+  static const requesterNameRequired = "Enter the requester's name";
+  static const requesterPhoneRequired = 'Enter a contact phone number';
+  static const rescueDescriptionRequired = 'Describe the situation';
+  static const prioritySelectRequired = 'Select a priority';
+  static const latitudeNumber = 'Latitude must be a number';
+  static const longitudeNumber = 'Longitude must be a number';
+  static const latitudeRange = 'Latitude must be between -90 and 90';
+  static const longitudeRange = 'Longitude must be between -180 and 180';
+
   static String teamAssigned(String team) => 'Team: $team';
   static const noTeamYet = 'No team assigned yet';
   static const noPosition = 'No position given';
