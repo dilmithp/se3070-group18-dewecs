@@ -44,8 +44,19 @@ class RescueCard extends StatelessWidget {
                               child: Icon(Icons.support_outlined, size: 20, color: AppColors.rescue),
                             ),
                             const SizedBox(width: 10),
-                            Expanded(child: Text(request.requesterName, style: theme.textTheme.titleMedium)),
-                            Flexible(child: OpsChips.rescueStatus(context, request.status)),
+                            // Wrap: the badge sits beside a short name and drops below a long one, so the name
+                            // never has to share its width with the badge.
+                            Expanded(
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(request.requesterName, style: theme.textTheme.titleMedium),
+                                  OpsChips.rescueStatus(context, request.status),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 10),

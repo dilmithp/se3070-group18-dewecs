@@ -146,6 +146,8 @@ class _RescueListScreenState extends State<RescueListScreen> {
       backgroundColor: Colors.transparent,
       body: column,
       floatingActionButton: FloatingActionButton.extended(
+        // Both lists live in the tab stack at once, so each button needs its own hero tag.
+        heroTag: 'new-rescue',
         onPressed: _create,
         icon: const Icon(Icons.add),
         label: const Text(S.newRescueButton),

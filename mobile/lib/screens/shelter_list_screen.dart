@@ -137,6 +137,8 @@ class _ShelterListScreenState extends State<ShelterListScreen> {
       backgroundColor: Colors.transparent,
       body: column,
       floatingActionButton: FloatingActionButton.extended(
+        // Both lists live in the tab stack at once, so each button needs its own hero tag.
+        heroTag: 'new-shelter',
         onPressed: _create,
         icon: const Icon(Icons.add),
         label: const Text(S.newShelterButton),

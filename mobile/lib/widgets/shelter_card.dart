@@ -40,8 +40,19 @@ class ShelterCard extends StatelessWidget {
                               child: Icon(Icons.night_shelter_outlined, size: 20, color: AppColors.shelter),
                             ),
                             const SizedBox(width: 10),
-                            Expanded(child: Text(shelter.name, style: theme.textTheme.titleMedium)),
-                            Flexible(child: OpsChips.shelterStatus(context, shelter.status)),
+                            // Wrap: the badge sits beside a short name and drops below a long one, so the name
+                            // never has to share its width with the badge.
+                            Expanded(
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                children: [
+                                  Text(shelter.name, style: theme.textTheme.titleMedium),
+                                  OpsChips.shelterStatus(context, shelter.status),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 10),

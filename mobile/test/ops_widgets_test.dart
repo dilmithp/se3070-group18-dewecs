@@ -191,6 +191,35 @@ void main() {
       expect(find.text('Waiting for a team'), findsOneWidget);
     });
 
+    testWidgets('a long name gets the whole title width and the badge drops below it', (tester) async {
+      tester.view.physicalSize = const Size(320, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const longName = 'Northern Coastal Region Community Relief Shelter';
+      await show(
+        tester,
+        ShelterCard(
+          shelter: Shelter(
+            id: 1,
+            name: longName,
+            districtId: 1,
+            districtName: 'Colombo',
+            organizationName: 'Red Cross',
+            capacity: 50,
+            currentOccupancy: 20,
+            status: 'OPEN',
+          ),
+          onTap: () {},
+        ),
+      );
+
+      final name = tester.getRect(find.text(longName));
+      final badge = tester.getRect(find.text('Open'));
+      expect(name.width, greaterThan(150));
+      expect(badge.top, greaterThanOrEqualTo(name.bottom - 1));
+    });
+
     testWidgets('cards fit a narrow phone with large text in dark mode', (tester) async {
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1.0;
