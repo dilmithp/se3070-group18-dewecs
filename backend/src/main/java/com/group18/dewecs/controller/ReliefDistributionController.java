@@ -5,6 +5,7 @@ import com.group18.dewecs.dto.ReliefDistributionFormRequest;
 import com.group18.dewecs.exception.ReliefValidationException;
 import com.group18.dewecs.mapper.ReliefDistributionMapper;
 import com.group18.dewecs.service.ReliefDistributionService;
+import com.group18.dewecs.service.ReliefLogisticsService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,11 +24,14 @@ public class ReliefDistributionController {
 
     private final ReliefDistributionService reliefDistributionService;
     private final ReliefDistributionMapper reliefDistributionMapper;
+    private final ReliefLogisticsService reliefLogisticsService;
 
     public ReliefDistributionController(ReliefDistributionService reliefDistributionService,
-                                         ReliefDistributionMapper reliefDistributionMapper) {
+                                         ReliefDistributionMapper reliefDistributionMapper,
+                                         ReliefLogisticsService reliefLogisticsService) {
         this.reliefDistributionService = reliefDistributionService;
         this.reliefDistributionMapper = reliefDistributionMapper;
+        this.reliefLogisticsService = reliefLogisticsService;
     }
 
     @GetMapping
@@ -81,6 +85,9 @@ public class ReliefDistributionController {
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("distribution", reliefDistributionMapper.toResponse(
                 reliefDistributionService.getById(id)));
+        model.addAttribute("details", reliefLogisticsService.details(id).orElse(null));
+        model.addAttribute("events", reliefLogisticsService.events(id));
+        model.addAttribute("rerouteOptions", reliefLogisticsService.rerouteOptions(id));
         return "relief-distributions/detail";
     }
 
@@ -100,7 +107,7 @@ public class ReliefDistributionController {
     // TODO: restrict to DMC-officer/logistics-coordinator role once auth lands
     public String cancel(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            reliefDistributionService.cancel(id);
+            reliefLogisticsService.cancel(id, "DMC officer");
             redirectAttributes.addFlashAttribute("message", "Distribution cancelled; stock restored.");
         } catch (ReliefValidationException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());

@@ -17,10 +17,12 @@ public class WarningResponse {
     private final LocalDateTime issuedAt;
     private final LocalDateTime expiresAt;
     private final List<String> broadcastChannels;
+    private final List<String> affectedDistrictNames;
 
     public WarningResponse(Long id, String hazardType, String districtName, Long districtId, String severity,
                            String status, String message, String issuedByName, LocalDateTime issuedAt,
-                           LocalDateTime expiresAt, List<String> broadcastChannels) {
+                           LocalDateTime expiresAt, List<String> broadcastChannels,
+                           List<String> affectedDistrictNames) {
         this.id = id;
         this.hazardType = hazardType;
         this.districtName = districtName;
@@ -32,6 +34,7 @@ public class WarningResponse {
         this.issuedAt = issuedAt;
         this.expiresAt = expiresAt;
         this.broadcastChannels = broadcastChannels;
+        this.affectedDistrictNames = affectedDistrictNames;
     }
 
     public Long getId() {
@@ -76,5 +79,10 @@ public class WarningResponse {
 
     public List<String> getBroadcastChannels() {
         return broadcastChannels;
+    }
+
+    /** Every district the warning covers: the event district, plus the districts of a river basin when one was chosen. */
+    public List<String> getAffectedDistrictNames() {
+        return affectedDistrictNames;
     }
 }

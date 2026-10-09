@@ -775,3 +775,234 @@ progress.occupancy.is-full::-moz-progress-bar { background: var(--color-danger);
 @media print {
     .site-header, .actions, .filter-bar { display: none; }
 }
+
+/* ---------- 7. UC-01 additions: delivery log badges, hazard status, active-warnings map ---------- */
+.badge-sent, .badge-resolved {
+    background: var(--color-success-bg);
+    color: var(--color-success-text);
+}
+
+.badge-failed {
+    background: var(--sev-critical-bg);
+    color: var(--sev-critical-text);
+}
+
+.badge-active {
+    background: var(--sev-moderate-bg);
+    color: var(--sev-moderate-text);
+}
+
+.badge-contained {
+    background: var(--color-info-bg);
+    color: var(--color-info-text);
+}
+
+.preline { white-space: pre-line; }
+
+.map-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5);
+    align-items: flex-start;
+}
+
+.sl-map {
+    flex: 0 1 280px;
+    width: 280px;
+    max-width: 100%;
+    height: auto;
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
+.sl-outline {
+    fill: var(--color-surface);
+    stroke: var(--color-border-strong);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.map-marker {
+    stroke: #ffffff;
+    stroke-width: 2;
+    opacity: 0.95;
+}
+
+.map-marker:hover, a:focus .map-marker { stroke: var(--color-focus); stroke-width: 3; }
+.map-marker.sev-low { fill: #2f8f52; }
+.map-marker.sev-moderate { fill: #d99a00; }
+.map-marker.sev-high { fill: #d9560f; }
+.map-marker.sev-critical { fill: #b42318; }
+
+.map-label {
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--color-text);
+    paint-order: stroke;
+    stroke: var(--color-surface);
+    stroke-width: 3px;
+}
+
+.map-legend {
+    flex: 1 1 220px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: var(--space-2);
+}
+
+/* ---------- 8. One-screen warning issue page (Add New Hazard Event): form left, map and active warnings right ---------- */
+.issue-layout {
+    display: grid;
+    gap: var(--space-5);
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+
+.issue-form .field + .field,
+.issue-form fieldset,
+.issue-form .field { margin-bottom: var(--space-4); }
+
+.area-group {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.area-group legend {
+    padding: 0;
+    font-weight: 600;
+    margin-bottom: var(--space-2);
+}
+
+.area-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.radio-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 9.5rem;
+    min-height: var(--tap);
+    font-weight: 500;
+}
+
+.radio-label input { width: 1.1rem; height: 1.1rem; margin: 0; }
+
+.area-row select { flex: 1 1 12rem; }
+
+.area-row select:disabled { opacity: 0.55; background: var(--color-surface-muted); }
+
+.btn-issue {
+    background: #4f5bd5;
+    border-color: #4f5bd5;
+    color: #ffffff;
+}
+
+.btn-issue:hover { background: #3f49b3; border-color: #3f49b3; }
+
+.issue-side { display: grid; gap: var(--space-4); }
+
+.map-card { padding: var(--space-3); }
+
+.sl-map-wide {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    flex: none;
+}
+
+.map-caption {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+}
+
+.active-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+
+.active-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    box-shadow: var(--shadow-sm);
+}
+
+.active-text { display: grid; gap: 2px; min-width: 0; }
+
+.active-title { font-weight: 700; color: var(--color-text); text-decoration: none; }
+
+.active-title:hover { text-decoration: underline; }
+
+.active-severity { font-size: var(--text-sm); color: var(--color-text-muted); }
+
+.btn-escalate {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: #0b0b0f;
+    border-color: #0b0b0f;
+    color: #ffffff;
+    min-height: var(--tap);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-escalate:hover { background: #2a2a33; border-color: #2a2a33; }
+
+.btn-escalate svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+@media (min-width: 900px) {
+    .issue-layout { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+}
+
+/* ---------- 9. Relief command center ---------- */
+.warn-box {
+    border-left: 5px solid var(--sev-high-text);
+    background: var(--sev-moderate-bg);
+    margin-bottom: var(--space-4);
+}
+
+.warn-box h2 { margin-top: 0; }
+
+.need-card { align-items: flex-start; flex-wrap: wrap; }
+
+.need-actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.need-card progress.occupancy { width: 100%; min-width: 10rem; }
+
+.bar-row { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-2) 0; }
+.bar-label { flex: 0 0 9rem; font-size: 0.9rem; }
+.bar-svg { flex: 1 1 auto; height: 0.8rem; border-radius: 4px; }
+.bar-value { flex: 0 0 6rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- 10. Google map picker ---------- */
+.map-picker { margin-top: var(--space-2); }
+.map-canvas { width: 100%; height: 320px; border: 1px solid var(--border, #d6dbe4); border-radius: 8px; background: #e3e8f0; }

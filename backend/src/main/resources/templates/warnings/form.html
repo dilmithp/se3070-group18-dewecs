@@ -7,6 +7,25 @@
 <main id="main" class="container">
     <div th:replace="~{fragments/layout :: pageHeader(${warningId != null} ? 'Edit draft warning' : 'New draft warning', 'A draft is not visible to the public until it is published.')}"></div>
 
+    <section class="card" th:if="${review != null}" aria-labelledby="review-h">
+        <h2 id="review-h">Hazard information</h2>
+        <p>
+            <strong th:text="${#strings.capitalize(#strings.toLowerCase(review.event.hazardType)) + ' in ' + review.event.districtName}"></strong>
+            <span th:replace="~{fragments/layout :: badge(${review.event.severity})}"></span>
+            <span th:replace="~{fragments/layout :: badge(${review.event.status})}"></span>
+            since <th:block th:replace="~{fragments/layout :: time(${review.event.occurredAt})}"></th:block>
+        </p>
+        <p th:if="${review.verifiedReports.isEmpty()}" class="help">No verified field reports for this district yet.</p>
+        <ul th:if="${!review.verifiedReports.isEmpty()}">
+            <li th:each="r : ${review.verifiedReports}">
+                <strong th:text="${#strings.capitalize(#strings.toLowerCase(r.category))}"></strong>:
+                <span th:text="${r.description}"></span>
+                (<a th:href="@{/ground-reports/{id}(id=${r.id})}">report</a>)
+            </li>
+        </ul>
+        <p class="help">Only verified reports are shown. An unverified citizen report never changes a warning by itself.</p>
+    </section>
+
     <form th:action="${warningId != null} ? @{/warnings/{id}(id=${warningId})} : @{/warnings}"
           th:object="${form}" method="post" class="card">
 
@@ -48,6 +67,17 @@
                 <label for="expiresAt">Expires at</label>
                 <input type="datetime-local" th:field="*{expiresAt}" aria-describedby="expiresAt-help"/>
                 <span class="help" id="expiresAt-help">Optional. An issued warning expires automatically after this time.</span>
+            </div>
+
+            <div class="field">
+                <label for="riverBasinId">Target a river basin</label>
+                <select th:field="*{riverBasinId}" aria-describedby="riverBasinId-help">
+                    <option value="" th:text="${warningId != null} ? '-- keep the current districts --' : '-- only the event district --'"></option>
+                    <option th:each="rb : ${riverBasins}" th:value="${rb.id}"
+                            th:text="${rb.name + ' (' + #strings.listJoin(rb.districts.![name], ', ') + ')'}"></option>
+                </select>
+                <span class="help" id="riverBasinId-help">Optional. The warning then covers every district the basin runs through, not only the event district.</span>
+                <span class="help" th:if="${currentDistricts != null}" th:text="'Currently covers: ' + ${#strings.listJoin(currentDistricts, ', ')}"></span>
             </div>
 
             <div class="field field-wide">

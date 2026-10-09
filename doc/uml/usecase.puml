@@ -27,6 +27,14 @@ rectangle "DEWECS" {
     usecase "List and filter warnings" as UC01e
     usecase "Check region and message" as UC01v
     usecase "Expire overdue warnings" as UC01x
+    usecase "Register hazard event" as UC01h
+    usecase "Review hazard information\n(verified field reports)" as UC01r
+    usecase "Target a river basin" as UC01t
+    usecase "Escalate warning" as UC01s
+    usecase "Broadcast on chosen channels\n(retry and fallback)" as UC01bc
+    usecase "Retry failed channels" as UC01f
+    usecase "View delivery log" as UC01l
+    usecase "View active warnings map" as UC01m
   }
 
   package "UC-02 Ground reporting" {
@@ -74,6 +82,12 @@ Officer --> UC01b
 Officer --> UC01c
 Officer --> UC01d
 Officer --> UC01e
+Officer --> UC01h
+Officer --> UC01r
+Officer --> UC01s
+Officer --> UC01f
+Officer --> UC01l
+Officer --> UC01m
 Officer --> UC02f
 Officer --> UC02g
 Officer --> UC02h
@@ -106,6 +120,14 @@ Citizen --> UC02e
 
 ' include and extend
 UC01c ..> UC01v : <<include>>
+UC01c ..> UC01bc : <<include>>
+UC01s ..> UC01bc : <<include>>
+UC01s ..> UC01c : <<extend>>
+UC01t ..> UC01a : <<extend>>
+UC01a ..> UC01r : <<uses>>
+UC01f ..> UC01bc : <<include>>
+UC01l ..> UC01bc : <<shows result of>>
+UC01m ..> UC01e : <<uses live warnings>>
 UC01e ..> UC01x : <<include>>
 UC02b ..> UC02a : <<include>>
 UC02b ..> UC02d : <<include>>

@@ -1,0 +1,14 @@
+package com.group18.dewecs.domain;
+
+public enum CoordinationEventType {
+    OCCUPANCY_UPDATED,
+    SHELTER_FLAGGED,
+    TEAM_DISPATCHED,
+    CROSS_ORG_CONFIRMED,
+    TEAM_STATUS,
+    SUPPORT_REQUESTED,
+    UNASSIGNED_ESCALATED,
+    SUPPLY_LOGGED,
+    SYNC_CONFLICT,
+    EMPTY_DISTRICT
+}

@@ -16,8 +16,11 @@
             <dt>Severity</dt>
             <dd><span th:replace="~{fragments/layout :: badge(${warning.severity})}"></span></dd>
 
+            <dt>Regions covered</dt>
+            <dd th:text="${#strings.listJoin(warning.affectedDistrictNames, ', ')}"></dd>
+
             <dt>Message</dt>
-            <dd th:text="${warning.message} ?: '—'"></dd>
+            <dd class="preline" th:text="${warning.message} ?: '—'"></dd>
 
             <dt>Broadcast channels</dt>
             <dd th:text="${#lists.isEmpty(warning.broadcastChannels)} ? '—' : ${#strings.listJoin(warning.broadcastChannels, ', ')}"></dd>
@@ -41,7 +44,7 @@
 
         <a th:if="${warning.status == 'DRAFT'}" th:href="@{/warnings/{id}/edit(id=${warning.id})}" class="btn btn-secondary">Edit</a>
 
-        <form th:if="${warning.status == 'DRAFT' or warning.status == 'ISSUED'}"
+        <form th:if="${warning.status == 'DRAFT' or warning.status == 'ISSUED' or warning.status == 'UPDATED'}"
               th:action="@{/warnings/{id}/retract(id=${warning.id})}" method="post" class="inline-form">
             <button type="submit" class="btn btn-danger"
                     data-confirm="Retract this warning? It will no longer count as open.">Retract</button>
@@ -49,6 +52,80 @@
 
         <a th:href="@{/warnings}" class="btn btn-link">Back to list</a>
     </div>
+
+    <section class="card" th:if="${(warning.status == 'ISSUED' or warning.status == 'UPDATED') and !escalationOptions.isEmpty()}"
+             aria-labelledby="escalate-h">
+        <h2 id="escalate-h">Escalate this warning</h2>
+        <p class="help">Raises the severity and sends the warning again on its channels. It keeps its original issue time.</p>
+        <form th:action="@{/warnings/{id}/escalate(id=${warning.id})}" method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="esc-severity">New severity <span class="req" aria-hidden="true">*</span></label>
+                    <select id="esc-severity" name="severity" aria-required="true">
+                        <option th:each="s : ${escalationOptions}" th:value="${s}"><th:block th:replace="~{fragments/layout :: enumLabel(${s})}"></th:block></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="esc-expires">New expiry</label>
+                    <input id="esc-expires" type="datetime-local" name="expiresAt"/>
+                </div>
+                <div class="field field-wide">
+                    <label for="esc-note">Reason for the escalation</label>
+                    <textarea id="esc-note" name="note" rows="2" aria-describedby="esc-note-help"></textarea>
+                    <span class="help" id="esc-note-help">Optional. It is added to the end of the message.</span>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger"
+                        data-confirm="Escalate and send this warning again?">Escalate and re-send</button>
+            </div>
+        </form>
+    </section>
+
+    <section aria-labelledby="log-h">
+        <h2 id="log-h">Delivery log</h2>
+        <p class="help" th:if="${#lists.isEmpty(warning.broadcastChannels)}">No broadcast channel was chosen for this warning, so nothing was sent.</p>
+        <p class="flash-error" role="alert"
+           th:if="${!#lists.isEmpty(warning.broadcastChannels) and !allDelivered and (warning.status == 'ISSUED' or warning.status == 'UPDATED')}">
+            At least one channel has not been delivered yet.
+        </p>
+        <form th:if="${!#lists.isEmpty(warning.broadcastChannels) and !allDelivered and (warning.status == 'ISSUED' or warning.status == 'UPDATED')}"
+              th:action="@{/warnings/{id}/rebroadcast(id=${warning.id})}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-secondary">Send again on the failed channels</button>
+        </form>
+        <div class="table-wrap" th:if="${!#lists.isEmpty(warning.broadcastChannels) or !deliveryLog.isEmpty()}">
+            <table>
+                <thead>
+                <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">Why</th>
+                    <th scope="col">Channel</th>
+                    <th scope="col">Attempt</th>
+                    <th scope="col">Result</th>
+                    <th scope="col">Citizens</th>
+                    <th scope="col">Note</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="l : ${deliveryLog}">
+                    <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${l.time})}"></th:block></td>
+                    <td><th:block th:replace="~{fragments/layout :: enumLabel(${l.trigger})}"></th:block></td>
+                    <td>
+                        <th:block th:replace="~{fragments/layout :: enumLabel(${l.channel})}"></th:block>
+                        <span class="help" th:if="${l.fallbackFor != null}" th:text="'(instead of ' + ${#strings.replace(#strings.toLowerCase(l.fallbackFor), '_', ' ')} + ')'"></span>
+                    </td>
+                    <td th:text="${l.attempt}"></td>
+                    <td><span th:replace="~{fragments/layout :: badge(${l.outcome})}"></span></td>
+                    <td th:text="${l.recipients} ?: '—'"></td>
+                    <td th:text="${l.detail}"></td>
+                </tr>
+                <tr th:if="${deliveryLog.isEmpty()}">
+                    <td colspan="7" class="empty">Nothing has been sent yet. Publishing the warning broadcasts it on the chosen channels.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </main>
 <script th:src="@{/js/app.js}" defer></script>
 </body>

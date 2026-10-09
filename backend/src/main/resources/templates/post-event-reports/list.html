@@ -8,18 +8,53 @@
     <div th:replace="~{fragments/layout :: pageHeader('Post-event analysis', 'How the warnings, shelters and relief performed for a hazard event.')}"></div>
     <div th:replace="~{fragments/layout :: flash}"></div>
 
-    <form method="post" th:action="@{/post-event-reports}" class="filter-bar card">
-        <div class="field">
-            <label for="event">Hazard event</label>
-            <select id="event" name="hazardEventId" required>
-                <option value="">Choose an event</option>
-                <option th:each="e : ${events}" th:value="${e.id}"
-                        th:text="${e.hazardType.name()} + ' in ' + ${e.district.name} + ' (' + ${#temporals.format(e.occurredAt, 'yyyy-MM-dd HH:mm')} + ')'"></option>
-            </select>
+    <section class="card warn-box" th:if="${gaps != null and !gaps.isEmpty()}" role="alert" aria-labelledby="gap-h">
+        <h2 id="gap-h">Incomplete data warning</h2>
+        <p>The data for this window has gaps. Choose how to continue:</p>
+        <ul><li th:each="g : ${gaps}" th:text="${g}"></li></ul>
+        <p class="help">Provisional draft: generated with the gaps flagged and a disclaimer; it cannot be approved. Override: an administrator justification is required and the report is marked as such.</p>
+    </section>
+
+    <form method="post" th:action="@{/post-event-reports}" class="card">
+        <div class="form-grid">
+            <div class="field">
+                <label for="event">Hazard event <span class="req" aria-hidden="true">*</span></label>
+                <select id="event" name="hazardEventId" required>
+                    <option value="">Choose an event</option>
+                    <option th:each="e : ${events}" th:value="${e.id}" th:selected="${e.id == selectedEventId}"
+                            th:text="${e.hazardType.name()} + ' in ' + ${e.district.name} + ' (' + ${#temporals.format(e.occurredAt, 'yyyy-MM-dd HH:mm')} + ')'"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="from">Window start (optional)</label>
+                <input id="from" type="datetime-local" name="from" th:value="${fromValue}"/>
+            </div>
+            <div class="field">
+                <label for="to">Window end (optional)</label>
+                <input id="to" type="datetime-local" name="to" th:value="${toValue}"/>
+            </div>
+            <div class="field">
+                <label for="donor">Donor / agency filter</label>
+                <select id="donor" name="donorOrganizationId">
+                    <option value="">All agencies</option>
+                    <option th:each="o : ${donors}" th:value="${o.id}" th:selected="${o.id == selectedDonorId}" th:text="${o.name}"></option>
+                </select>
+            </div>
+            <th:block th:if="${gaps != null and !gaps.isEmpty()}">
+                <div class="field">
+                    <label for="gapHandling">How to handle the gaps</label>
+                    <select id="gapHandling" name="gapHandling">
+                        <option value="PROVISIONAL" th:selected="${selectedHandling == 'PROVISIONAL'}">Generate a provisional draft</option>
+                        <option value="OVERRIDE" th:selected="${selectedHandling == 'OVERRIDE'}">Override (administrator)</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="justification">Justification (required for override)</label>
+                    <input id="justification" type="text" name="justification" th:value="${justificationValue}"/>
+                </div>
+            </th:block>
         </div>
-        <div class="filter-actions">
-            <button type="submit" class="btn btn-primary">Generate report</button>
-        </div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">Generate report</button></div>
     </form>
 
     <div class="table-wrap">

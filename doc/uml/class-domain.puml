@@ -89,6 +89,15 @@ enum OrganizationType {
   NGO
   PRIVATE_DONOR
 }
+enum DeliveryOutcome {
+  SENT
+  FAILED
+}
+enum DeliveryTrigger {
+  PUBLISH
+  ESCALATION
+  RETRY
+}
 enum MetricType {
   ALERT_TIMELINE
   CITIZENS_REACHED
@@ -137,9 +146,27 @@ class Warning {
   LocalDateTime expiresAt
   Set<BroadcastChannel> broadcastChannels
 }
+class RiverBasin {
+  Long id
+  String name
+}
+class AlertDeliveryLog {
+  Long id
+  BroadcastChannel channel
+  Integer attempt
+  DeliveryOutcome outcome
+  DeliveryTrigger trigger
+  BroadcastChannel fallbackFor
+  Integer recipients
+  String detail
+  LocalDateTime createdAt
+}
+RiverBasin "*" --> "*" District : runs through
 HazardEvent "*" --> "1" District
 Warning "*" --> "1" HazardEvent
 Warning "*" --> "1" User : issuedBy
+Warning "*" --> "*" District : affectedDistricts\n(basin warning)
+AlertDeliveryLog "*" --> "1" Warning
 
 ' ---------- ground reports ----------
 class GroundReport {

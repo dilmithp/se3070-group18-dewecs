@@ -35,6 +35,40 @@
             <span class="stat-label">Unreviewed Reports</span>
         </a>
     </div>
+
+    <section aria-labelledby="hazards-h">
+        <h2 id="hazards-h">Active hazard events</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th scope="col">Hazard</th>
+                    <th scope="col">Region</th>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Verified reports</th>
+                    <th scope="col">Live warnings</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="h : ${activeHazards}">
+                    <td><th:block th:replace="~{fragments/layout :: enumLabel(${h.hazardType})}"></th:block></td>
+                    <td th:text="${h.districtName}"></td>
+                    <td><span th:replace="~{fragments/layout :: badge(${h.severity})}"></span></td>
+                    <td th:text="${h.verifiedReports}"></td>
+                    <td th:text="${h.liveWarnings}"></td>
+                    <td class="nowrap">
+                        <a th:href="@{/hazard-events/{id}(id=${h.id})}" class="btn btn-link">Review</a>
+                        <a th:href="@{/warnings/new(hazardEventId=${h.id})}" class="btn btn-link">Issue warning</a>
+                    </td>
+                </tr>
+                <tr th:if="${activeHazards.isEmpty()}">
+                    <td colspan="6" class="empty">No active hazard event. <a th:href="@{/hazard-events/new}">Register one</a> to start a warning.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </main>
 <script th:src="@{/js/app.js}" defer></script>
 </body>

@@ -10,6 +10,9 @@
 
     <section class="card">
         <dl class="detail-grid">
+            <dt>Reference</dt>
+            <dd th:text="'#DIS-' + ${#numbers.formatInteger(distribution.id, 4)}"></dd>
+
             <dt>Status</dt>
             <dd><span th:replace="~{fragments/layout :: badge(${distribution.status})}"></span></dd>
 
@@ -27,20 +30,136 @@
         </dl>
     </section>
 
-    <div class="actions">
-        <form th:if="${distribution.status == 'DISPATCHED'}"
-              th:action="@{/relief-distributions/{id}/deliver(id=${distribution.id})}" method="post" class="inline-form">
-            <button type="submit" class="btn btn-primary">Mark delivered</button>
-        </form>
+    <section class="card" th:if="${details != null}" aria-labelledby="details-h">
+        <h2 id="details-h">Dispatch details</h2>
+        <dl class="detail-grid">
+            <th:block th:if="${details.incidentLabel}">
+                <dt>Incident</dt>
+                <dd th:text="${details.incidentLabel}"></dd>
+            </th:block>
+            <th:block th:if="${details.needLabel}">
+                <dt>Fulfils</dt>
+                <dd th:text="${details.needLabel}"></dd>
+            </th:block>
+            <th:block th:if="${!details.linkedReferences.isEmpty()}">
+                <dt>Split allocation</dt>
+                <dd th:text="'Linked batches: ' + ${#strings.listJoin(details.linkedReferences, ', ')}"></dd>
+            </th:block>
+            <th:block th:if="${details.handlingNotes}">
+                <dt>Handling instructions</dt>
+                <dd th:text="${details.handlingNotes}"></dd>
+            </th:block>
+            <th:block th:if="${details.vehicle != null or details.driverName != null}">
+                <dt>Convoy</dt>
+                <dd th:text="${(details.vehicle ?: '') + (details.driverName != null ? ' / driver ' + details.driverName : '') + (details.driverPhone != null ? ' (' + details.driverPhone + ')' : '')}"></dd>
+            </th:block>
+            <th:block th:if="${details.expectedArrival}">
+                <dt>Expected arrival</dt>
+                <dd><th:block th:replace="~{fragments/layout :: time(${details.expectedArrival})}"></th:block></dd>
+            </th:block>
+            <th:block th:if="${details.handedOverAt != null}">
+                <dt>Signed for by</dt>
+                <dd th:text="${details.receivedBy}"></dd>
+                <dt>Accepted</dt>
+                <dd th:text="${details.receivedQuantity} + ' of ' + ${distribution.quantity} + ' ' + ${distribution.resourceUnit}"></dd>
+                <th:block th:if="${details.damagedQuantity != null and details.damagedQuantity > 0}">
+                    <dt>Damaged</dt>
+                    <dd th:text="${details.damagedQuantity} + ' ' + ${distribution.resourceUnit}"></dd>
+                </th:block>
+                <th:block th:if="${details.handoverNote}">
+                    <dt>Handover notes</dt>
+                    <dd th:text="${details.handoverNote}"></dd>
+                </th:block>
+                <th:block th:if="${details.handoverPhotoUrl}">
+                    <dt>Photo</dt>
+                    <dd><a th:href="@{${details.handoverPhotoUrl}}"><img class="report-photo" th:src="@{${details.handoverPhotoUrl}}" alt="Photo of the damaged goods at handover"/></a></dd>
+                </th:block>
+            </th:block>
+        </dl>
+    </section>
 
+    <section class="card" th:if="${distribution.status == 'DISPATCHED'}" aria-labelledby="handover-h">
+        <h2 id="handover-h">Confirm field handover</h2>
+        <p class="help">The field lead tallies the stock at the shelter and the supervisor signs by typing their name. If part of the batch is damaged, enter the damaged quantity and the notes: the loss is logged and the missing quantity goes back to the urgent needs.</p>
+        <form th:action="@{/relief-distributions/{id}/handover(id=${distribution.id})}" method="post" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="receivedBy">Receiving supervisor (signature) <span class="req" aria-hidden="true">*</span></label>
+                    <input id="receivedBy" type="text" name="receivedBy" aria-required="true" required/>
+                </div>
+                <div class="field">
+                    <label for="receivedQuantity">Accepted quantity</label>
+                    <input id="receivedQuantity" type="number" min="0" name="receivedQuantity" th:value="${distribution.quantity}"/>
+                </div>
+                <div class="field">
+                    <label for="damagedQuantity">Damaged quantity</label>
+                    <input id="damagedQuantity" type="number" min="0" name="damagedQuantity" value="0"/>
+                </div>
+                <div class="field">
+                    <label for="photo">Photo of damaged cargo</label>
+                    <input id="photo" type="file" name="photo" accept="image/jpeg,image/png,image/webp"/>
+                </div>
+                <div class="field field-wide">
+                    <label for="note">Notes (required when something is damaged)</label>
+                    <textarea id="note" name="note" rows="2"></textarea>
+                </div>
+                <div class="field">
+                    <label for="officerName">Recorded by</label>
+                    <input id="officerName" type="text" name="officerName" placeholder="Field lead"/>
+                </div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Confirm handover</button></div>
+        </form>
+    </section>
+
+    <section class="card" th:if="${distribution.status == 'DISPATCHED' and !rerouteOptions.isEmpty()}" aria-labelledby="reroute-h">
+        <h2 id="reroute-h">Re-route this consignment</h2>
+        <p class="help">Use this when the road to the shelter is impassable. Only shelters of the same district are offered. The convoy driver is notified.</p>
+        <form th:action="@{/relief-distributions/{id}/reroute(id=${distribution.id})}" method="post">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="rr-shelter">Alternate shelter</label>
+                    <select id="rr-shelter" name="shelterId">
+                        <option value="">-- select --</option>
+                        <option th:each="s : ${rerouteOptions}" th:value="${s.id}" th:text="${s.name}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="rr-reason">Reason</label>
+                    <input id="rr-reason" type="text" name="reason" placeholder="e.g., bridge impassable"/>
+                </div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-secondary" data-confirm="Change the destination and notify the driver?">Re-route</button></div>
+        </form>
+    </section>
+
+    <div class="actions">
         <form th:if="${distribution.status == 'DISPATCHED'}"
               th:action="@{/relief-distributions/{id}/cancel(id=${distribution.id})}" method="post" class="inline-form">
             <button type="submit" class="btn btn-danger"
                     data-confirm="Cancel this distribution? The quantity returns to stock.">Cancel</button>
         </form>
-
+        <a th:href="@{/relief-logistics}" class="btn btn-secondary">Command center</a>
         <a th:href="@{/relief-distributions}" class="btn btn-link">Back to list</a>
     </div>
+
+    <section aria-labelledby="audit-h">
+        <h2 id="audit-h">Logistics audit log</h2>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th scope="col">Time</th><th scope="col">What</th><th scope="col">Detail</th><th scope="col">By</th></tr></thead>
+                <tbody>
+                <tr th:each="e : ${events}">
+                    <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${e.time})}"></th:block></td>
+                    <td><th:block th:replace="~{fragments/layout :: enumLabel(${e.type})}"></th:block></td>
+                    <td th:text="${e.detail}"></td>
+                    <td th:text="${e.recordedBy}"></td>
+                </tr>
+                <tr th:if="${events.isEmpty()}"><td colspan="4" class="empty">No audit entries: this consignment was created before the audit log existed.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </main>
 <script th:src="@{/js/app.js}" defer></script>
 </body>

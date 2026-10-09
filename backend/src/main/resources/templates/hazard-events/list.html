@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Hazard events')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('hazards')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Hazard events', 'Register an incident, review what is known about it, then issue a warning.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="actions">
+        <a th:href="@{/hazard-events/new}" class="btn btn-primary">+ Register hazard event</a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Hazard</th>
+                <th scope="col">Region</th>
+                <th scope="col">Severity</th>
+                <th scope="col">Status</th>
+                <th scope="col">Started</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="e : ${events}">
+                <td><th:block th:replace="~{fragments/layout :: enumLabel(${e.hazardType})}"></th:block></td>
+                <td th:text="${e.districtName}"></td>
+                <td><span th:replace="~{fragments/layout :: badge(${e.severity})}"></span></td>
+                <td><span th:replace="~{fragments/layout :: badge(${e.status})}"></span></td>
+                <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${e.occurredAt})}"></th:block></td>
+                <td><a th:href="@{/hazard-events/{id}(id=${e.id})}" class="btn btn-link">Review</a></td>
+            </tr>
+            <tr th:if="${events.isEmpty()}">
+                <td colspan="6" class="empty">No hazard events yet. Register one to start a warning.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

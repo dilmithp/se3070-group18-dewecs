@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Dispatch a rescue team')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('coordination')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Dispatch a rescue team', null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <section class="card">
+        <dl class="detail-grid">
+            <dt>Incident</dt><dd th:text="'Request #' + ${options.requestId} + ': ' + ${options.description}"></dd>
+            <dt>Priority</dt><dd><span th:replace="~{fragments/layout :: badge(${options.priority})}"></span></dd>
+            <dt>Location</dt><dd th:text="${options.location}"></dd>
+        </dl>
+    </section>
+
+    <form method="get" class="filter-bar card" th:action="@{/coordination/incidents/{id}(id=${options.requestId})}">
+        <div class="field">
+            <label for="capability">Capability needed</label>
+            <select id="capability" name="capability">
+                <option value="">Any</option>
+                <option th:each="c : ${capabilities}" th:value="${c.name()}" th:selected="${c.name() == selectedCapability}"
+                        th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(c.name(), '_', ' ')))}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="organizationId">I am acting for</label>
+            <select id="organizationId" name="organizationId">
+                <option value="">-- not stated --</option>
+                <option th:each="o : ${organizations}" th:value="${o.id}" th:selected="${o.id == selectedOrganizationId}" th:text="${o.name}"></option>
+            </select>
+        </div>
+        <div class="filter-actions"><button type="submit" class="btn btn-secondary">Filter teams</button></div>
+    </form>
+
+    <p class="flash-error" role="alert" th:if="${options.noneAvailable}">
+        No available team matches. You can mark the incident as unassigned and escalate it to the DMC.
+    </p>
+
+    <form th:action="@{/coordination/incidents/{id}/dispatch(id=${options.requestId})}" method="post" class="card" th:if="${!options.candidates.isEmpty()}">
+        <h2>Available teams, nearest first</h2>
+        <p class="help" th:if="${options.candidates[0].otherDistrict}">No team is free in this district: these are the next nearest from other districts.</p>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th scope="col"><span class="visually-hidden">Choose</span></th><th scope="col">Team</th><th scope="col">Organization</th><th scope="col">Capability</th><th scope="col">Distance</th></tr></thead>
+                <tbody>
+                <tr th:each="c : ${options.candidates}">
+                    <td><input type="radio" name="teamId" th:value="${c.id}" th:id="'team-' + ${c.id}" required/></td>
+                    <td><label th:for="'team-' + ${c.id}" th:text="${c.name}"></label>
+                        <span class="badge badge-pending-review" th:if="${c.crossOrganization}">Other organization</span></td>
+                    <td th:text="${c.organizationName}"></td>
+                    <td th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(c.capability, '_', ' ')))}"></td>
+                    <td th:text="${c.distance}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <input type="hidden" name="organizationId" th:value="${selectedOrganizationId}"/>
+        <div class="field"><label for="notes">Notes and coordinates for the team</label><textarea id="notes" name="notes" rows="2"></textarea></div>
+        <label class="checkbox-label"><input type="checkbox" name="confirmCrossOrganization" value="true"/>
+            <span>I confirm the cross-organization handshake (required when the team belongs to another organization)</span></label>
+        <div class="field"><label for="officerName">Dispatched by</label><input id="officerName" type="text" name="officerName" placeholder="District officer"/></div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">Confirm dispatch</button></div>
+    </form>
+
+    <div class="actions">
+        <form th:if="${options.noneAvailable}" th:action="@{/coordination/incidents/{id}/escalate(id=${options.requestId})}" method="post" class="inline-form">
+            <button type="submit" class="btn btn-danger">Mark unassigned and escalate to DMC</button>
+        </form>
+        <a th:href="@{/coordination(districtId=${options.districtId})}" class="btn btn-link">Back to the district</a>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

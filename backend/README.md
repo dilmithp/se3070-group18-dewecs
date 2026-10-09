@@ -79,7 +79,7 @@ database is shared). Check the schema first with `../doc/neon-schema-check.sql` 
 ## Tests and coverage
 
 ```powershell
-mvn -B test        # 192 tests, H2 only, no network
+mvn -B test        # 260 tests, H2 only, no network
 mvn -B verify      # also builds the WAR; JaCoCo report in target/site/jacoco/index.html
 ```
 
@@ -95,13 +95,14 @@ Last measured: 82% of lines and 70% of branches overall (controller.api 89%/62%,
 
 | Use case | Routes |
 |---|---|
-| Warning issuance | `/warnings`, `/warnings/new`, `/warnings/{id}`, `/{id}/edit`, POST `/{id}/publish`, `/{id}/retract` |
+| Warning issuance | `/warnings/issue` (the one-screen "Add New Hazard Event": form, map, active warnings with one-click Escalate; GET and POST), `/warnings` (list with the active-warnings map), `/warnings/new` (also `?hazardEventId=`), `/warnings/{id}`, `/{id}/edit`, POST `/{id}/publish`, `/{id}/retract`, `/{id}/escalate`, `/{id}/rebroadcast` |
+| Hazard events (start of UC-01) | `/hazard-events`, `/hazard-events/new`, POST `/hazard-events`, `/hazard-events/{id}` (evidence review), POST `/{id}/status` |
 | Shelter and rescue | `/shelters` (+ `new`, `{id}`, `edit`, `close`, `reopen`, `check-in`, `check-out/{occupantId}`); `/rescue-requests` (+ `new`, `{id}`, `assign`, `complete`, `cancel`) |
 | Relief distribution | `/relief-supplies` (+ `new`, `{id}`, `edit`, `restock`); `/relief-distributions` (+ `new`, `{id}`, `deliver`, `cancel`) |
 | Reporting (ground-report review) | `/ground-reports`, `/ground-reports/{id}`, POST `/{id}/review`, `/{id}/action`, `/{id}/dismiss`; dashboard at `/` and `/dashboard` |
 | Post-event analysis | `/post-event-reports` (list + generate form), POST `/post-event-reports` (hazardEventId), `/post-event-reports/{id}` |
 
-All 47 routes are in `../doc/DEWECS.postman_collection.json`. Pages are HTML; successful actions redirect with a
+All 56 routes are in `../doc/DEWECS.postman_collection.json`. Pages are HTML; successful actions redirect with a
 flash `message`, rule violations redirect with a flash `error`.
 
 ## JSON for the officer pages
@@ -141,6 +142,32 @@ No CDN, web font, icon font or JavaScript framework: one stylesheet (`static/css
   `aria-describedby` for their error message (see `shelters/form.html`).
 - **Screenshots** of every page at 1280 px and 390 px are in `../doc/screenshots/`.
 
+## UC-01 warnings: hazard event, basin, broadcast, escalation
+
+1. **Hazard event** (`HazardEventService`): an officer registers an incident (type, severity, district, start time) and
+   reads its page, which lists the *verified or actioned* ground reports of the district from 24 hours before it began.
+   Status only moves forward (ACTIVE, CONTAINED, RESOLVED). The dashboard lists the active events.
+2. **River basin** (`river_basins`): a warning can target a basin; it then covers the event district plus every district of
+   the basin (`warning_districts`). Filtering warnings by district also finds basin warnings.
+3. **Broadcast** (`AlertBroadcastService`): publishing and escalating send the warning on each chosen channel through a
+   `ChannelSender`. A failing channel is tried `dewecs.alerts.max-attempts` times (default 2), then replaced once by
+   its fallback (app push, e-mail and social media fall back to SMS; SMS and TV to radio; radio to siren; siren has
+   none). Every attempt is a row in `alert_delivery_logs`, shown on the warning page. Delivery failures never block
+   publishing; *Send again on the failed channels* retries what is not delivered yet.
+4. **Escalation**: a published warning (ISSUED or UPDATED) can be raised to a higher severity, with an optional reason
+   (appended to the message) and a new expiry. It becomes UPDATED, keeps its issue time, is sent again, and still
+   counts as an open warning on the dashboard.
+
+| Setting | Meaning |
+|---|---|
+| `dewecs.alerts.max-attempts` | attempts per channel before the fallback (default 2) |
+| `dewecs.alerts.simulate-failures` | comma separated channels the simulated gateway always fails, e.g. `SMS,SIREN` (default none) |
+
+**Database:** UC-01 adds four new tables (`river_basins`, `river_basin_districts`, `warning_districts`,
+`alert_delivery_logs`) and changes none of the existing ones. On the shared Neon database a human must run
+`../doc/neon-uc01-tables.sql` **before** deploying this version (the default profile validates the schema and would
+refuse to start). The `local` and `test` profiles create the tables themselves.
+
 ## Mobile API
 
 The Flutter ground-reporting app talks to a JSON API under `/api/v1` (contract v1, frozen): reference data,
@@ -175,10 +202,14 @@ telling the team).
 
 - No authentication or roles (26 `TODO: restrict ... once auth lands` comments mark the protected actions).
 - No optimistic locking, so two simultaneous check-ins or distributions can oversubscribe.
-- Warnings are stored, not broadcast. Expiry is lazy (a warning flips to EXPIRED when a warnings page is read), so the
+- Alerts are simulated: publishing and escalating run every chosen channel through `SimulatedChannelSender`, which only
+  records the outcome (see "UC-01 warnings"). No SMS, e-mail, radio or push is really sent until a real `ChannelSender` is
+  added. There is no river-level or other monitoring feed, so "review hazard information" shows the event and the
+  verified ground reports only. Expiry is lazy (a warning flips to EXPIRED when a warnings page is read), so the
   dashboard can briefly count an overdue warning as open.
 - A distribution to a CLOSED shelter is accepted. One item per distribution.
-- No screens to create districts, organizations, users, hazard events, teams or citizens: use the `local` demo data.
+- No screens to create districts, organizations, users, teams or citizens: use the `local` demo data. (Hazard events
+  can now be registered on `/hazard-events/new`.)
 - No pagination.
 - Post-event report: a snapshot, so each generation creates a new report (nothing is recalculated later). It has four
   metrics: alert timeline (minutes from event start to the first published warning), citizens reached (citizens
@@ -187,3 +218,47 @@ telling the team).
   resources distributed (units in DELIVERED consignments to the district's shelters since the event started). Related
   warnings are the event's ISSUED, UPDATED and EXPIRED warnings. There is no PDF/CSV export.
 - The artifact is a WAR but has no `SpringBootServletInitializer`: run it with `java -jar`, not on an external Tomcat.
+
+## UC-02 relief logistics and post-event analytics
+
+- **Command center** `/relief-logistics` (incident + district): unified inventory of every agency, shelter needs, fulfilment
+  percentage, dispatch form (handling notes, convoy), recent consignments. Needs: POST `/relief-logistics/needs`.
+- **Dispatch** POST `/relief-logistics/dispatch`: over 85% of one agency's stock proposes a split across partner agencies
+  (linked sub-consignments, accepted with `acceptSplit=true`). The stock row is locked while dispatching; a changed stock
+  since the form was shown gives a conflict message. Writes an audit log and notifies the agencies
+  (`/relief-logistics/notifications`; recorded only, nothing is sent outside).
+- **Consignment page** `/relief-distributions/{id}`: details, audit log, field handover (POST `/handover`: signature name,
+  accepted/damaged quantity, photo, notes), re-route to another shelter of the district (POST `/reroute`).
+- **Reports** `/post-event-reports`: parameters (event, time window, donor filter). Data gaps give a choice: provisional
+  draft (disclaimer, cannot be approved) or administrator override with a justification. Detail page shows indicators and
+  bar charts; POST `/{id}/approve`; downloads `/{id}/export.pdf` and `/{id}/export.csv`.
+- **Database:** six new tables, run `../doc/neon-uc02-tables.sql` in Neon **before** deploying (ddl-auto=validate).
+- **Not done:** the exported PDF is not digitally signed; offline handover and session time-out handling are out of scope;
+  no real SMS or push to agencies.
+
+## UC-03 coordinate shelter and rescue operations
+
+- **District view** `/coordination?districtId=`: shelters (occupancy against capacity, near-capacity and full flags with
+  suggested alternates), rescue teams (status, field stage, capability, last-known time), open incidents, audit trail.
+- **Occupancy** POST `/coordination/shelters/{id}/occupancy`: rejects negative, non-numeric or over-capacity figures; at or above
+  90% the shelter is flagged; at capacity it becomes FULL. A concurrent change is detected (`expectedOccupancy`): both attempts
+  are logged and the latest valid value wins.
+- **Dispatch** `/coordination/incidents/{requestId}`: available teams, nearest first (from the team's base position), filtered by
+  capability. A team of another organization needs the handshake checkbox. With no team in the district the next nearest from
+  other districts is offered; with none at all the incident can be marked unassigned and escalated.
+- **Team status** POST `/coordination/teams/{id}/status` (en route, on site, task complete, needs support). Needs support alerts
+  the officer and lists backup teams. Task complete completes the rescue request and frees the team.
+- **Supplies** POST `/coordination/supplies` logs a distribution against the owning organization's stock.
+- **Offline**: occupancy updates made without a connection are queued in the browser and replayed in time order to POST
+  `/coordination/sync`; an update older than the latest one is kept out and flagged for review.
+- **Database:** two new tables, run `../doc/neon-uc03-tables.sql` in Neon **before** deploying (ddl-auto=validate).
+- **Not done:** only occupancy updates are queued offline (not dispatches or supply logs); no real push to teams; no login, so
+  "who" is a typed name; teams report through the officer's page, not their own device.
+
+## Google Maps
+
+`dewecs.google.maps.api-key` (prod properties) turns on a click-to-pick map on the hazard event and rescue request forms and a
+read-only map on their detail pages (`static/js/map.js`, fragments `mapPicker`/`mapView`). Without a key the forms keep plain
+latitude/longitude fields. The key reaches the browser as a request attribute (never in the JSON of a page): restrict it in the
+Google Cloud console to your site's HTTP referrers and to the Maps JavaScript API. Hazard event positions are stored in the new
+table `hazard_event_locations` (`doc/neon-uc01-map-table.sql`, run in Neon first).

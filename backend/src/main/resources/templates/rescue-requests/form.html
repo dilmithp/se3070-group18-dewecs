@@ -60,6 +60,11 @@
                 <p class="field-error" th:if="${#fields.hasErrors('gpsLng')}" th:errors="*{gpsLng}"></p>
             </div>
 
+            <div class="field field-wide">
+                <span class="label">Pick the location on the map</span>
+                <div th:replace="~{fragments/layout :: mapPicker('gpsLat', 'gpsLng')}"></div>
+            </div>
+
             <div class="field field-wide" th:classappend="${#fields.hasErrors('description')} ? 'has-error'">
                 <label for="description">Description <span class="req" aria-hidden="true">*</span></label>
                 <textarea th:field="*{description}" rows="4" aria-required="true"
@@ -75,5 +80,6 @@
     </form>
 </main>
 <script th:src="@{/js/app.js}" defer></script>
+<script th:src="@{/js/map.js}" defer></script>
 </body>
 </html>

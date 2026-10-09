@@ -24,6 +24,8 @@
 
             <dt>GPS</dt>
             <dd th:text="(${request.gpsLat} != null and ${request.gpsLng} != null) ? (${request.gpsLat} + ', ' + ${request.gpsLng}) : '—'"></dd>
+            <dt th:if="${request.gpsLat != null and request.gpsLng != null}">Map</dt>
+            <dd th:if="${request.gpsLat != null and request.gpsLng != null}"><div th:replace="~{fragments/layout :: mapView(${request.gpsLat}, ${request.gpsLng})}"></div></dd>
 
             <dt>Description</dt>
             <dd th:text="${request.description}"></dd>
@@ -72,5 +74,6 @@
     </div>
 </main>
 <script th:src="@{/js/app.js}" defer></script>
+<script th:src="@{/js/map.js}" defer></script>
 </body>
 </html>

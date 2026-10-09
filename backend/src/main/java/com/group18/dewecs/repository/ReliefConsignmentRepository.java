@@ -12,6 +12,9 @@ public interface ReliefConsignmentRepository extends JpaRepository<ReliefConsign
 
     List<ReliefConsignment> findByStatusAndShelter_District_Id(ConsignmentStatus status, Long districtId);
 
+    /** Newest first: the consignments to the shelters of a district. */
+    List<ReliefConsignment> findByShelter_District_IdOrderByDispatchedAtDescIdDesc(Long districtId);
+
     @Query("""
             SELECT DISTINCT c FROM ReliefConsignment c JOIN c.items i
             WHERE (:status IS NULL OR c.status = :status)

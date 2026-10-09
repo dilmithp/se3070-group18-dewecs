@@ -4,6 +4,7 @@ import com.group18.dewecs.domain.BroadcastChannel;
 import com.group18.dewecs.domain.Citizen;
 import com.group18.dewecs.domain.ConsignmentItem;
 import com.group18.dewecs.domain.ConsignmentStatus;
+import com.group18.dewecs.domain.DeliveryTrigger;
 import com.group18.dewecs.domain.District;
 import com.group18.dewecs.domain.GroundReport;
 import com.group18.dewecs.domain.GroundReportStatus;
@@ -12,6 +13,7 @@ import com.group18.dewecs.domain.HazardEventStatus;
 import com.group18.dewecs.domain.HazardType;
 import com.group18.dewecs.domain.Organization;
 import com.group18.dewecs.domain.OrganizationType;
+import com.group18.dewecs.domain.RiverBasin;
 import com.group18.dewecs.domain.ReliefConsignment;
 import com.group18.dewecs.domain.RescueRequest;
 import com.group18.dewecs.domain.RescueRequestStatus;
@@ -28,6 +30,8 @@ import com.group18.dewecs.domain.Warning;
 import com.group18.dewecs.domain.WarningStatus;
 import com.group18.dewecs.repository.CitizenRepository;
 import com.group18.dewecs.repository.ConsignmentItemRepository;
+import com.group18.dewecs.repository.RiverBasinRepository;
+import com.group18.dewecs.service.AlertBroadcastService;
 import com.group18.dewecs.repository.DistrictRepository;
 import com.group18.dewecs.repository.GroundReportRepository;
 import com.group18.dewecs.repository.HazardEventRepository;
@@ -72,6 +76,8 @@ public class DemoDataLoader implements CommandLineRunner {
     private final ResourceRepository resources;
     private final ReliefConsignmentRepository consignments;
     private final ConsignmentItemRepository consignmentItems;
+    private final RiverBasinRepository riverBasins;
+    private final AlertBroadcastService alertBroadcast;
 
     public DemoDataLoader(DistrictRepository districts, OrganizationRepository organizations,
                           UserRepository users, CitizenRepository citizens,
@@ -79,7 +85,8 @@ public class DemoDataLoader implements CommandLineRunner {
                           WarningRepository warnings, ShelterRepository shelters,
                           ShelterOccupantRepository occupants, RescueTeamRepository rescueTeams,
                           RescueRequestRepository rescueRequests, ResourceRepository resources,
-                          ReliefConsignmentRepository consignments, ConsignmentItemRepository consignmentItems) {
+                          ReliefConsignmentRepository consignments, ConsignmentItemRepository consignmentItems,
+                          RiverBasinRepository riverBasins, AlertBroadcastService alertBroadcast) {
         this.districts = districts;
         this.organizations = organizations;
         this.users = users;
@@ -94,6 +101,8 @@ public class DemoDataLoader implements CommandLineRunner {
         this.resources = resources;
         this.consignments = consignments;
         this.consignmentItems = consignmentItems;
+        this.riverBasins = riverBasins;
+        this.alertBroadcast = alertBroadcast;
     }
 
     @Override
@@ -107,6 +116,8 @@ public class DemoDataLoader implements CommandLineRunner {
         District colombo = district("Colombo");
         District galle = district("Galle");
         District kandy = district("Kandy");
+        // Created last so the ids of the other demo rows stay the same: only here for the river-basin demo.
+        District gampaha = district("Gampaha");
 
         Organization dmc = organization("Disaster Management Centre", OrganizationType.GOVERNMENT);
         Organization army = organization("Sri Lanka Army", OrganizationType.ARMED_FORCES);
@@ -140,6 +151,17 @@ public class DemoDataLoader implements CommandLineRunner {
         warning(flood, Severity.MODERATE, WarningStatus.ISSUED,
                 "Earlier flood advisory for Galle (already past its expiry time).",
                 now.minusMinutes(30), now.minusHours(8), officer, Set.of(BroadcastChannel.EMAIL));
+
+        // River basins: a Kelani warning covers Colombo and Gampaha at once. The draft below is the demo of it.
+        RiverBasin kelani = basin("Kelani Ganga", colombo, gampaha);
+        basin("Gin Ganga", galle);
+        basin("Mahaweli Ganga", kandy);
+        HazardEvent kelaniFlood = hazard(HazardType.FLOOD, Severity.HIGH, colombo, now.minusHours(5));
+        Warning basinDraft = warning(kelaniFlood, Severity.HIGH, WarningStatus.DRAFT,
+                "Kelani river is rising: people in Colombo and Gampaha near the river should prepare to move.",
+                now.plusHours(18), null, officer, Set.of(BroadcastChannel.SMS, BroadcastChannel.APP_PUSH));
+        basinDraft.setAffectedDistricts(new HashSet<>(Set.of(colombo, gampaha)));
+        warnings.save(basinDraft);
 
         Shelter nearlyFull = shelter("Galle Central College", galle, redCross, 10, 9, ShelterStatus.OPEN);
         Shelter full = shelter("Kandy Town Hall", kandy, army, 5, 5, ShelterStatus.FULL);
@@ -226,7 +248,14 @@ public class DemoDataLoader implements CommandLineRunner {
         groundReports.save(r);
     }
 
-    private void warning(HazardEvent event, Severity severity, WarningStatus status, String message,
+    private RiverBasin basin(String name, District... covered) {
+        RiverBasin b = new RiverBasin();
+        b.setName(name);
+        b.setDistricts(new HashSet<>(Set.of(covered)));
+        return riverBasins.save(b);
+    }
+
+    private Warning warning(HazardEvent event, Severity severity, WarningStatus status, String message,
                          LocalDateTime expiresAt, LocalDateTime issuedAt, User by, Set<BroadcastChannel> channels) {
         Warning w = new Warning();
         w.setHazardEvent(event);
@@ -237,7 +266,12 @@ public class DemoDataLoader implements CommandLineRunner {
         w.setIssuedAt(issuedAt);
         w.setIssuedBy(by);
         w.setBroadcastChannels(new HashSet<>(channels));
-        warnings.save(w);
+        Warning saved = warnings.save(w);
+        if (status == WarningStatus.ISSUED && !channels.isEmpty()) {
+            // An already published demo warning has been sent: give it its delivery log.
+            alertBroadcast.broadcast(saved, DeliveryTrigger.PUBLISH, null);
+        }
+        return saved;
     }
 
     private Shelter shelter(String name, District district, Organization org, int capacity, int occupancy,

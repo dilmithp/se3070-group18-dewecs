@@ -26,9 +26,36 @@
         </div>
         <div class="filter-actions">
             <button type="submit" class="btn btn-secondary">Filter</button>
-            <a th:href="@{/warnings/new}" class="btn btn-primary">+ New warning</a>
+            <a th:href="@{/warnings/new}" class="btn btn-secondary">Draft only</a>
+            <a th:href="@{/warnings/issue}" class="btn btn-primary">+ Issue warning</a>
         </div>
     </form>
+
+    <section class="card" aria-labelledby="map-h">
+        <h2 id="map-h">Active warnings map</h2>
+        <p class="help" id="map-desc">Districts with a live warning, coloured by the highest severity. Select one to filter the table.</p>
+        <p class="empty" th:if="${map.markers.isEmpty()}">No live warning right now.</p>
+        <div class="map-layout" th:if="${!map.markers.isEmpty()}">
+            <svg class="sl-map" th:attr="viewBox='0 0 ' + ${map.width} + ' ' + ${map.height}" role="img"
+                 aria-labelledby="map-h map-desc" focusable="false">
+                <path class="sl-outline" th:attr="d=${map.outlinePath}"></path>
+                <a th:each="m : ${map.markers}" th:href="@{/warnings(districtId=${m.districtId})}">
+                    <circle class="map-marker" th:classappend="'sev-' + ${#strings.toLowerCase(m.severity)}"
+                            th:attr="cx=${m.x},cy=${m.y},r=${m.radius}">
+                        <title th:text="${m.districtName + ': ' + m.warningCount + ' live warning(s), highest ' + #strings.toLowerCase(m.severity)}"></title>
+                    </circle>
+                    <text class="map-label" th:attr="x=${m.x + m.radius + 4},y=${m.y + 4}" th:text="${m.districtName}"></text>
+                </a>
+            </svg>
+            <ul class="map-legend">
+                <li th:each="m : ${map.markers}">
+                    <span th:replace="~{fragments/layout :: badge(${m.severity})}"></span>
+                    <a th:href="@{/warnings(districtId=${m.districtId})}" th:text="${m.districtName}"></a>
+                    <span th:text="${m.warningCount} + ' live warning(s)'"></span>
+                </li>
+            </ul>
+        </div>
+    </section>
 
     <div class="table-wrap">
         <table>
@@ -46,12 +73,16 @@
             <tbody>
             <tr th:each="w : ${warnings}">
                 <td><th:block th:replace="~{fragments/layout :: enumLabel(${w.hazardType})}"></th:block></td>
-                <td th:text="${w.districtName}"></td>
+                <td th:text="${#strings.listJoin(w.affectedDistrictNames, ', ')}"></td>
                 <td><span th:replace="~{fragments/layout :: badge(${w.severity})}"></span></td>
                 <td><span th:replace="~{fragments/layout :: badge(${w.status})}"></span></td>
                 <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${w.issuedAt})}"></th:block></td>
                 <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${w.expiresAt})}"></th:block></td>
-                <td><a th:href="@{/warnings/{id}(id=${w.id})}" class="btn btn-link">View</a></td>
+                <td class="nowrap">
+                    <a th:href="@{/warnings/{id}(id=${w.id})}" class="btn btn-link">View</a>
+                    <a th:if="${w.status == 'ISSUED' or w.status == 'UPDATED'}"
+                       th:href="@{/warnings/{id}(id=${w.id})} + '#escalate-h'" class="btn btn-link">Escalate</a>
+                </td>
             </tr>
             <tr th:if="${warnings.isEmpty()}">
                 <td colspan="7" class="empty">No warnings match this filter. Clear the filters or create a new warning.</td>

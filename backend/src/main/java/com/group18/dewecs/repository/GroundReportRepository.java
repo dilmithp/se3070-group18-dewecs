@@ -17,6 +17,10 @@ public interface GroundReportRepository extends JpaRepository<GroundReport, Long
 
     long countByStatus(GroundReportStatus status);
 
+    /** Verified or actioned reports of a district, newest first: the field evidence an officer reviews before warning. */
+    List<GroundReport> findByDistrict_IdAndStatusInOrderBySubmittedAtDescIdDesc(Long districtId,
+            java.util.Collection<GroundReportStatus> statuses);
+
     /** One citizen's reports, newest first (mobile API). */
     Page<GroundReport> findByReportedBy_IdOrderBySubmittedAtDescIdDesc(Long citizenId, Pageable pageable);
 

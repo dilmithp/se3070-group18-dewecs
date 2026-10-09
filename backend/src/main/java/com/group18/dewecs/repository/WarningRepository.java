@@ -17,5 +17,8 @@ public interface WarningRepository extends JpaRepository<Warning, Long> {
 
     long countByStatus(WarningStatus status);
 
+    /** Warnings that cover the district through a river basin (the join table), whatever their event district. */
+    List<Warning> findByAffectedDistricts_Id(Long districtId);
+
     List<Warning> findByHazardEvent_IdAndStatusIn(Long hazardEventId, Collection<WarningStatus> statuses);
 }

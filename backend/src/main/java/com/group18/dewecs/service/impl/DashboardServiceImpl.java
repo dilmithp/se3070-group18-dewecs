@@ -40,7 +40,7 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardSummary getSummary() {
         return new DashboardSummary(
-                warningRepository.countByStatus(WarningStatus.ISSUED),
+                warningRepository.countByStatus(WarningStatus.ISSUED) + warningRepository.countByStatus(WarningStatus.UPDATED),
                 shelterRepository.countByStatus(ShelterStatus.FULL),
                 rescueRequestRepository.countByStatus(RescueRequestStatus.PENDING),
                 resourceRepository.countByQuantityLessThan(Resource.LOW_STOCK_THRESHOLD),

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Relief command center')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('logistics')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Relief Logistics & Distribution', 'Pick the incident and district, check the stock of every agency and the shelter needs, then dispatch.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <form method="get" th:action="@{/relief-logistics}" class="filter-bar card">
+        <div class="field">
+            <label for="f-incident">Incident</label>
+            <select id="f-incident" name="hazardEventId">
+                <option value="">-- any --</option>
+                <option th:each="e : ${incidents}" th:value="${e.id}"
+                        th:selected="${e.id == view.hazardEventId}"
+                        th:text="${#strings.capitalize(#strings.toLowerCase(e.hazardType)) + ' in ' + e.districtName + ' (' + #temporals.format(e.occurredAt, 'yyyy-MM-dd') + ')'}"></option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="f-district">District</label>
+            <select id="f-district" name="districtId">
+                <option value="">-- from the incident --</option>
+                <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"
+                        th:selected="${d.id == view.districtId}"></option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-secondary">Open</button>
+            <a th:href="@{/relief-logistics/notifications}" class="btn btn-link">Agency notifications</a>
+            <a th:href="@{/relief-distributions}" class="btn btn-link">All distributions</a>
+        </div>
+    </form>
+
+    <p class="empty card" th:if="${view.districtId == null}">Choose an incident or a district to open its logistics view.</p>
+
+    <th:block th:if="${view.districtId != null}">
+        <p class="flash" role="status" th:if="${view.hasNeeds}"
+           th:text="${view.districtName} + ' fulfilment: ' + ${view.fulfilmentPercent} + '% of the requested supplies are allocated.'"></p>
+
+        <section class="card warn-box" th:if="${proposal != null}" aria-labelledby="split-h" role="alert">
+            <h2 id="split-h">Low stock threshold warning</h2>
+            <p>The quantity is more than 85% of one agency's remaining stock (or more than it holds). The system proposes
+                to split the batch across partner agencies. Each agency gives at most 85% of what it has left.</p>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Agency</th><th scope="col">Supply</th><th scope="col">Share</th><th scope="col">Quantity</th><th scope="col">In stock now</th></tr></thead>
+                    <tbody>
+                    <tr th:each="p : ${proposal}">
+                        <td th:text="${p.organizationName}"></td>
+                        <td th:text="${p.resourceName}"></td>
+                        <td th:text="${p.percent} + '%'"></td>
+                        <td th:text="${p.quantity}"></td>
+                        <td th:text="${p.stock}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="help">Press <strong>Accept split and dispatch</strong> below to commit the linked sub-batches, or change the quantity or supply and dispatch again.</p>
+        </section>
+
+        <div class="issue-layout">
+
+            <form th:action="@{/relief-logistics/dispatch}" th:object="${form}" method="post" class="card issue-form">
+                <h2>Draft a consignment</h2>
+                <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+                <input type="hidden" th:field="*{hazardEventId}"/>
+                <input type="hidden" th:field="*{districtId}"/>
+                <input type="hidden" th:field="*{expectedStock}"/>
+
+                <div class="field" th:classappend="${#fields.hasErrors('shelterId')} ? 'has-error'">
+                    <label for="shelterId">Destination shelter <span class="req" aria-hidden="true">*</span></label>
+                    <select th:field="*{shelterId}" aria-required="true">
+                        <option value="">-- select --</option>
+                        <option th:each="s : ${view.shelters}" th:value="${s.id}"
+                                th:text="${s.name + ' (' + s.currentOccupancy + '/' + s.capacity + ')'}"></option>
+                    </select>
+                    <p class="field-error" th:if="${#fields.hasErrors('shelterId')}" th:errors="*{shelterId}"></p>
+                </div>
+
+                <div class="field" th:classappend="${#fields.hasErrors('resourceId')} ? 'has-error'">
+                    <label for="resourceId">Contributing agency and supply <span class="req" aria-hidden="true">*</span></label>
+                    <select th:field="*{resourceId}" aria-required="true">
+                        <option value="">-- select --</option>
+                        <option th:each="s : ${view.inventory}" th:value="${s.resourceId}" th:attr="data-stock=${s.quantity}"
+                                th:text="${s.organizationName + ' - ' + s.resourceName + ' (' + s.quantity + ' ' + s.unit + ')'}"></option>
+                    </select>
+                    <p class="field-error" th:if="${#fields.hasErrors('resourceId')}" th:errors="*{resourceId}"></p>
+                </div>
+
+                <div class="field" th:classappend="${#fields.hasErrors('quantity')} ? 'has-error'">
+                    <label for="quantity">Quantity <span class="req" aria-hidden="true">*</span></label>
+                    <input type="number" min="1" th:field="*{quantity}" aria-required="true"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('quantity')}" th:errors="*{quantity}"></p>
+                </div>
+
+                <div class="field">
+                    <label for="needId">Fulfils the shelter need</label>
+                    <select th:field="*{needId}">
+                        <option value="">-- none --</option>
+                        <option th:each="n : ${view.needs}" th:value="${n.id}"
+                                th:text="${n.shelterName + ': ' + n.remaining + ' ' + #strings.toLowerCase(#strings.replace(n.resourceType, '_', ' ')) + ' still needed'}"></option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="handlingNotes">Handling instructions</label>
+                    <textarea th:field="*{handlingNotes}" rows="2" placeholder="e.g., keep dry, unload at the school gate"></textarea>
+                </div>
+
+                <fieldset class="area-group">
+                    <legend>Transport convoy</legend>
+                    <div class="form-grid">
+                        <div class="field"><label for="vehicle">Vehicle</label><input type="text" th:field="*{vehicle}" placeholder="e.g., Lorry WP LA-4821"/></div>
+                        <div class="field"><label for="expectedArrival">Expected arrival</label><input type="datetime-local" th:field="*{expectedArrival}"/></div>
+                        <div class="field"><label for="driverName">Driver</label><input type="text" th:field="*{driverName}"/></div>
+                        <div class="field"><label for="driverPhone">Driver phone</label><input type="text" th:field="*{driverPhone}"/></div>
+                    </div>
+                </fieldset>
+
+                <div class="field">
+                    <label for="officerName">Dispatched by (for the audit log)</label>
+                    <input type="text" th:field="*{officerName}" placeholder="DMC officer"/>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Commit and dispatch</button>
+                    <button type="submit" name="acceptSplit" value="true" class="btn btn-issue" th:if="${proposal != null}">Accept split and dispatch</button>
+                </div>
+            </form>
+
+            <aside class="issue-side">
+                <section class="card" aria-labelledby="inv-h">
+                    <h2 id="inv-h">Unified inventory</h2>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th scope="col">Agency</th><th scope="col">Supply</th><th scope="col">Stock</th></tr></thead>
+                            <tbody>
+                            <tr th:each="s : ${view.inventory}">
+                                <td th:text="${s.organizationName}"></td>
+                                <td><span th:text="${s.resourceName}"></span> <span class="help" th:text="'(' + ${#strings.toLowerCase(#strings.replace(s.type, '_', ' '))} + ')'"></span></td>
+                                <td class="nowrap"><span th:text="${s.quantity} + ' ' + ${s.unit}"></span>
+                                    <span class="badge badge-failed" th:if="${s.low}">Low</span></td>
+                            </tr>
+                            <tr th:if="${view.inventory.isEmpty()}"><td colspan="3" class="empty">No stock is registered in this district.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section aria-labelledby="needs-h">
+                    <h2 id="needs-h">Shelter needs</h2>
+                    <p class="empty" th:if="${view.needs.isEmpty()}">No open needs. Record one below when a shelter reports a shortage.</p>
+                    <ul class="active-list" th:if="${!view.needs.isEmpty()}">
+                        <li class="active-card need-card" th:each="n : ${view.needs}">
+                            <div class="active-text">
+                                <strong th:text="${n.shelterName}"></strong>
+                                <span>
+                                    <span class="badge badge-failed" th:if="${n.urgent}">Urgent</span>
+                                    <th:block th:replace="~{fragments/layout :: enumLabel(${n.resourceType})}"></th:block>:
+                                    <span th:text="${n.allocated} + ' of ' + ${n.needed} + ' allocated'"></span>
+                                </span>
+                                <progress class="occupancy" th:attr="max=100,value=${n.percent},aria-label='Allocated for ' + ${n.shelterName}"></progress>
+                                <span class="help" th:if="${n.note}" th:text="${n.note}"></span>
+                            </div>
+                            <div class="need-actions">
+                                <a th:href="@{/relief-logistics(hazardEventId=${view.hazardEventId},districtId=${view.districtId},needId=${n.id})}" class="btn btn-secondary">Allocate</a>
+                                <form th:action="@{/relief-logistics/needs/{id}/cancel(id=${n.id})}" method="post" class="inline-form">
+                                    <input type="hidden" name="hazardEventId" th:value="${view.hazardEventId}"/>
+                                    <input type="hidden" name="districtId" th:value="${view.districtId}"/>
+                                    <button type="submit" class="btn btn-link" data-confirm="Withdraw this need?">Withdraw</button>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
+
+                <form th:action="@{/relief-logistics/needs}" th:object="${needForm}" method="post" class="card">
+                    <h2>Record a shelter need</h2>
+                    <input type="hidden" name="hazardEventId" th:value="${view.hazardEventId}"/>
+                    <input type="hidden" name="districtId" th:value="${view.districtId}"/>
+                    <div class="field">
+                        <label for="n-shelter">Shelter</label>
+                        <select id="n-shelter" th:field="*{shelterId}">
+                            <option value="">-- select --</option>
+                            <option th:each="s : ${view.shelters}" th:value="${s.id}" th:text="${s.name}"></option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="n-type">Supply type</label>
+                        <select id="n-type" th:field="*{resourceType}">
+                            <option value="">-- select --</option>
+                            <option th:each="t : ${resourceTypes}" th:value="${t.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${t.name()})}"></th:block></option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="n-qty">Quantity needed</label>
+                        <input id="n-qty" type="number" min="1" th:field="*{quantity}"/>
+                    </div>
+                    <label class="checkbox-label"><input type="checkbox" th:field="*{urgent}"/><span>Urgent</span></label>
+                    <div class="field">
+                        <label for="n-note">Note</label>
+                        <input id="n-note" type="text" th:field="*{note}"/>
+                    </div>
+                    <div class="form-actions"><button type="submit" class="btn btn-secondary">Record need</button></div>
+                </form>
+            </aside>
+        </div>
+
+        <section aria-labelledby="recent-h">
+            <h2 id="recent-h">Recent consignments</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr><th scope="col">Reference</th><th scope="col">Agency</th><th scope="col">Item</th><th scope="col">Destination</th><th scope="col">Status</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${view.recent}">
+                        <td class="nowrap"><span th:text="${c.reference}"></span><span class="help" th:if="${c.parentReference}" th:text="' (part of ' + ${c.parentReference} + ')'"></span></td>
+                        <td th:text="${c.organizationName}"></td>
+                        <td th:text="${c.quantity} + ' ' + ${c.unit} + ' ' + ${c.itemName}"></td>
+                        <td th:text="${c.shelterName}"></td>
+                        <td><span th:replace="~{fragments/layout :: badge(${c.status})}"></span><span class="badge badge-failed" th:if="${c.damaged}">Damage</span></td>
+                        <td><a th:href="@{/relief-distributions/{id}(id=${c.id})}" class="btn btn-link">Open</a></td>
+                    </tr>
+                    <tr th:if="${view.recent.isEmpty()}"><td colspan="6" class="empty">Nothing dispatched in this district yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </th:block>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

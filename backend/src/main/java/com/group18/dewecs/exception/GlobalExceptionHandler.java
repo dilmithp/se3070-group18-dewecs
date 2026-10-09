@@ -40,7 +40,9 @@ public class GlobalExceptionHandler {
         return respond(request, HttpStatus.NOT_FOUND, ex.getMessage(), null);
     }
 
-    @ExceptionHandler({WarningValidationException.class, ShelterValidationException.class,
+    @ExceptionHandler({WarningValidationException.class, HazardEventValidationException.class,
+            ReportValidationException.class, CoordinationValidationException.class,
+            ShelterValidationException.class,
             RescueRequestValidationException.class, ReliefValidationException.class,
             GroundReportValidationException.class, CitizenValidationException.class})
     public Object handleBusinessRule(RuntimeException ex, HttpServletRequest request) {

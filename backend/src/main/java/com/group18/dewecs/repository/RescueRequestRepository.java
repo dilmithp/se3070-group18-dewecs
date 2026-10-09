@@ -22,4 +22,8 @@ public interface RescueRequestRepository extends JpaRepository<RescueRequest, Lo
                                 @Param("districtId") Long districtId);
 
     long countByStatus(RescueRequestStatus status);
+
+    java.util.Optional<RescueRequest> findFirstByAssignedTeam_IdAndStatusOrderByIdDesc(Long teamId, RescueRequestStatus status);
+
+    java.util.List<RescueRequest> findByDistrict_IdAndStatusIn(Long districtId, java.util.Collection<RescueRequestStatus> statuses);
 }

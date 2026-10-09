@@ -1,5 +1,5 @@
 @startuml sequence-issue-warning
-title UC-01 Issue a warning: draft, publish, retract
+title UC-01 Issue a warning: draft, publish and broadcast, escalate, retract
 autonumber
 skinparam shadowing false
 skinparam sequenceMessageAlign center
@@ -7,27 +7,30 @@ skinparam sequenceMessageAlign center
 actor "DMC Officer" as Officer
 participant "WarningController" as C
 participant "WarningServiceImpl" as S
+participant "AlertBroadcastServiceImpl" as B
+participant "ChannelSender\n(simulated)" as CS
 participant "WarningRepository" as WR
-database "Database" as DB
+database "Database\n(warnings, warning_districts,\nalert_delivery_logs)" as DB
 
-== Create the draft ==
-Officer -> C : POST /warnings (event, severity, message, channels, expiry)
+== Create the draft (optionally for a river basin) ==
+Officer -> C : POST /warnings (event, severity, message, channels, expiry, river basin?)
 C -> C : Bean Validation (@Valid form)
 alt form invalid
   C --> Officer : form shown again with field errors
 else valid
-  C -> S : createDraft(eventId, severity, message, expiresAt, channels, userId)
+  C -> S : createDraft(eventId, severity, message, expiresAt, channels, userId, riverBasinId)
   S -> S : find hazard event and issuing user (404 if missing)
+  opt a river basin was chosen
+    S -> DB : load basin; districts = event district + every basin district
+  end
   S -> WR : save(Warning status = DRAFT, issuedAt = null)
-  WR -> DB : INSERT warnings + warning_broadcast_channels
-  S --> C : Warning
+  WR -> DB : INSERT warnings, warning_broadcast_channels, warning_districts
   C --> Officer : redirect /warnings/{id} + flash "Draft warning created."
 end
 
-== Publish ==
+== Publish and broadcast ==
 Officer -> C : POST /warnings/{id}/publish
 C -> S : publish(id)
-S -> WR : findById(id)
 alt not a draft
   S --> C : WarningValidationException "Only draft warnings can be edited or published."
   C --> Officer : redirect + flash error
@@ -37,13 +40,54 @@ else no region or no message
 else ok
   S -> S : status = ISSUED, issuedAt = now
   S -> WR : save(warning)
+  S -> B : broadcast(warning, PUBLISH)
+  loop each chosen channel
+    loop up to max-attempts (default 2)
+      B -> CS : send(warning, channel)
+      CS --> B : SendResult(success, recipients, detail)
+      B -> DB : INSERT alert_delivery_logs (channel, attempt, SENT or FAILED)
+    end
+    opt every attempt failed and the channel has a fallback not already used
+      B -> CS : send on the fallback channel (e.g. SMS -> radio)
+      B -> DB : INSERT log rows with fallbackFor = the failed channel
+    end
+  end
+  B --> S : log rows (a delivery failure never throws)
   C --> Officer : redirect + flash "Warning published."
+end
+
+== Escalate a live warning ==
+Officer -> C : POST /warnings/{id}/escalate (higher severity, reason?, new expiry?)
+C -> S : escalate(id, severity, note, expiresAt)
+alt not ISSUED or UPDATED
+  S --> C : exception "Only published warnings can be escalated."
+else severity not higher
+  S --> C : exception "Escalation must raise the severity (it is HIGH now)."
+else new expiry not in the future
+  S --> C : exception "The new expiry must be in the future."
+else ok
+  S -> S : severity = higher, status = UPDATED, issuedAt unchanged, reason appended to the message
+  S -> WR : save(warning)
+  S -> B : broadcast(warning, ESCALATION, "Escalated from HIGH to CRITICAL.")
+  C --> Officer : redirect + flash "Warning escalated to CRITICAL and sent again."
+end
+
+== Send again on the failed channels ==
+Officer -> C : POST /warnings/{id}/rebroadcast
+C -> S : rebroadcast(id)
+S -> B : retryFailed(warning)
+B -> B : channels with no SENT row (their own or as a fallback)
+alt none left
+  C --> Officer : flash "Every channel is already delivered. Nothing to send again."
+else
+  B -> CS : send again, log rows with trigger RETRY
+  C --> Officer : flash "Sent again: N delivered, M failed attempt(s)."
 end
 
 == Retract ==
 Officer -> C : POST /warnings/{id}/retract
 C -> S : retract(id)
-alt status is not DRAFT or published
+alt status is not DRAFT, ISSUED or UPDATED
   S --> C : WarningValidationException
   C --> Officer : flash error
 else ok
@@ -55,8 +99,8 @@ end
 == Lazy expiry on every list ==
 Officer -> C : GET /warnings
 C -> S : list(statusFilter, districtId)
-S -> S : expireOverdue(): ISSUED warnings past expiresAt -> EXPIRED
+S -> S : expireOverdue(): ISSUED and UPDATED warnings past expiresAt -> EXPIRED
 S -> WR : save changed warnings
-S --> C : warnings
-C --> Officer : page (or JSON when Accept: application/json)
+S --> C : warnings (a district filter also finds basin warnings)
+C --> Officer : page with the active-warnings map (or JSON when Accept: application/json)
 @enduml

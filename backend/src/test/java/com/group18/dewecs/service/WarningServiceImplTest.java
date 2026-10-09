@@ -11,8 +11,10 @@ import com.group18.dewecs.domain.WarningStatus;
 import com.group18.dewecs.exception.WarningValidationException;
 import com.group18.dewecs.repository.DistrictRepository;
 import com.group18.dewecs.repository.HazardEventRepository;
+import com.group18.dewecs.repository.RiverBasinRepository;
 import com.group18.dewecs.repository.UserRepository;
 import com.group18.dewecs.repository.WarningRepository;
+import com.group18.dewecs.service.AlertBroadcastService;
 import com.group18.dewecs.service.impl.WarningServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,10 @@ class WarningServiceImplTest {
     private UserRepository userRepository;
     @Mock
     private DistrictRepository districtRepository;
+    @Mock
+    private RiverBasinRepository riverBasinRepository;
+    @Mock
+    private AlertBroadcastService alertBroadcastService;
 
     private WarningServiceImpl warningService;
     private HazardEvent hazardEvent;
@@ -50,7 +56,7 @@ class WarningServiceImplTest {
     @BeforeEach
     void setUp() {
         warningService = new WarningServiceImpl(warningRepository, hazardEventRepository, userRepository,
-                districtRepository);
+                districtRepository, riverBasinRepository, alertBroadcastService);
 
         District district = new District();
         district.setId(1L);

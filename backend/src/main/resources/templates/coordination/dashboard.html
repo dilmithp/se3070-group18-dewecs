@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('District coordination')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('coordination')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Coordinate Shelter & Rescue', 'One picture of the shelters, rescue teams and incidents of a district.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <form method="get" th:action="@{/coordination}" class="filter-bar card">
+        <div class="field">
+            <label for="districtId">District</label>
+            <select id="districtId" name="districtId" required>
+                <option value="">-- choose --</option>
+                <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}" th:selected="${d.id == districtId}"></option>
+            </select>
+        </div>
+        <div class="filter-actions"><button type="submit" class="btn btn-secondary">Open</button></div>
+    </form>
+
+    <p class="empty card" th:if="${picture == null}">Choose a district to open its coordination view.</p>
+
+    <th:block th:if="${picture != null}">
+        <p class="flash" role="status" th:if="${picture.activeWarnings > 0}"
+           th:text="${picture.activeWarnings} + ' official warning(s) are active for ' + ${picture.districtName} + '.'"></p>
+        <p class="flash-error" role="alert" th:if="${picture.empty}">
+            No shelters or rescue teams are registered for this district. Contact the DMC or the registration teams.
+            This attempt is not an error in the system; check that the owning organizations have registered their resources.
+        </p>
+
+        <p id="pending-sync" class="flash-error" role="status" hidden>Some occupancy updates are saved on this device and wait for a connection.</p>
+
+        <section aria-labelledby="sh-h">
+            <h2 id="sh-h">Shelters</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Shelter</th><th scope="col">Owner</th><th scope="col">Occupancy</th><th scope="col">Update</th></tr></thead>
+                    <tbody>
+                    <tr th:each="s : ${picture.shelters}">
+                        <td th:text="${s.name}"></td>
+                        <td th:text="${s.organizationName}"></td>
+                        <td>
+                            <progress class="occupancy" th:attr="max=100,value=${s.percent},aria-label='Occupancy of ' + ${s.name}"></progress>
+                            <span th:text="${s.occupancy} + ' / ' + ${s.capacity}"></span>
+                            <span class="badge badge-failed" th:if="${s.level == 'FULL'}">Full</span>
+                            <span class="badge badge-pending-review" th:if="${s.level == 'NEAR'}">Near capacity</span>
+                            <span class="badge" th:if="${s.level == 'CLOSED'}">Closed</span>
+                            <div class="help" th:if="${!s.alternates.isEmpty()}" th:text="'Alternates: ' + ${#strings.listJoin(s.alternates, '; ')}"></div>
+                        </td>
+                        <td>
+                            <form th:action="@{/coordination/shelters/{id}/occupancy(id=${s.id})}" method="post" class="inline-form occupancy-form">
+                                <input type="hidden" name="districtId" th:value="${picture.districtId}"/>
+                                <input type="hidden" name="expectedOccupancy" th:value="${s.occupancy}"/>
+                                <input type="number" min="0" name="occupancy" th:value="${s.occupancy}" th:aria-label="'New occupancy of ' + ${s.name}" required/>
+                                <button type="submit" class="btn btn-secondary">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${picture.shelters.isEmpty()}"><td colspan="4" class="empty">No shelters registered.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section aria-labelledby="inc-h">
+            <h2 id="inc-h">Open incidents</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Incident</th><th scope="col">Priority</th><th scope="col">Status</th><th scope="col">Team</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                    <tr th:each="i : ${picture.incidents}">
+                        <td th:text="${i.label}"></td>
+                        <td><span th:replace="~{fragments/layout :: badge(${i.priority})}"></span></td>
+                        <td><span th:replace="~{fragments/layout :: badge(${i.status})}"></span></td>
+                        <td th:text="${i.teamName} ?: '—'"></td>
+                        <td><a th:if="${i.status == 'PENDING'}" th:href="@{/coordination/incidents/{id}(id=${i.id})}" class="btn btn-primary">Dispatch a team</a></td>
+                    </tr>
+                    <tr th:if="${picture.incidents.isEmpty()}"><td colspan="5" class="empty">No open incidents.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section aria-labelledby="tm-h">
+            <h2 id="tm-h">Rescue teams</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Team</th><th scope="col">Organization</th><th scope="col">Status</th><th scope="col">Report</th><th scope="col">Profile</th></tr></thead>
+                    <tbody>
+                    <tr th:each="t : ${picture.teams}">
+                        <td><strong th:text="${t.name}"></strong>
+                            <div class="help" th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(t.capability, '_', ' ')))}"></div></td>
+                        <td th:text="${t.organizationName}"></td>
+                        <td>
+                            <span th:replace="~{fragments/layout :: badge(${t.status})}"></span>
+                            <span class="help" th:if="${t.stage}"><th:block th:replace="~{fragments/layout :: enumLabel(${t.stage})}"></th:block></span>
+                            <div class="help" th:if="${t.incident}" th:text="${t.incident}"></div>
+                            <div class="help" th:if="${t.supportNote}" th:text="'Needs support: ' + ${t.supportNote}"></div>
+                            <div class="help" th:if="${t.updatedAt != null}">
+                                <th:block th:text="${t.stale} ? 'Last known (no update since) ' : 'Updated '"></th:block><th:block th:replace="~{fragments/layout :: time(${t.updatedAt})}"></th:block>
+                            </div>
+                        </td>
+                        <td>
+                            <form th:if="${t.status == 'DISPATCHED' or t.status == 'NEEDS_SUPPORT'}"
+                                  th:action="@{/coordination/teams/{id}/status(id=${t.id})}" method="post" class="inline-form">
+                                <input type="hidden" name="districtId" th:value="${picture.districtId}"/>
+                                <select name="stage" th:aria-label="'Status of ' + ${t.name}">
+                                    <option value="EN_ROUTE">En route</option>
+                                    <option value="ON_SITE">On site</option>
+                                    <option value="TASK_COMPLETE">Task complete</option>
+                                    <option value="NEEDS_SUPPORT">Needs support</option>
+                                </select>
+                                <input type="text" name="note" placeholder="Note" th:aria-label="'Note for ' + ${t.name}"/>
+                                <button type="submit" class="btn btn-secondary">Report</button>
+                            </form>
+                        </td>
+                        <td>
+                            <form th:action="@{/coordination/teams/{id}/profile(id=${t.id})}" method="post" class="inline-form">
+                                <input type="hidden" name="districtId" th:value="${picture.districtId}"/>
+                                <select name="capability" th:aria-label="'Capability of ' + ${t.name}">
+                                    <option th:each="c : ${capabilities}" th:value="${c.name()}" th:selected="${c.name() == t.capability}"
+                                            th:text="${#strings.capitalize(#strings.toLowerCase(#strings.replace(c.name(), '_', ' ')))}"></option>
+                                </select>
+                                <input type="text" name="baseLat" th:value="${t.baseLat}" placeholder="Lat" size="8" th:aria-label="'Base latitude of ' + ${t.name}"/>
+                                <input type="text" name="baseLng" th:value="${t.baseLng}" placeholder="Lng" size="8" th:aria-label="'Base longitude of ' + ${t.name}"/>
+                                <button type="submit" class="btn btn-link">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${picture.teams.isEmpty()}"><td colspan="5" class="empty">No rescue teams registered.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <form th:action="@{/coordination/supplies}" method="post" class="card" th:if="${!picture.shelters.isEmpty()}">
+            <h2>Log relief supplies distributed</h2>
+            <p class="help">Records the distribution against the owning organization's stock and in the audit trail.</p>
+            <input type="hidden" name="districtId" th:value="${picture.districtId}"/>
+            <div class="form-grid">
+                <div class="field"><label for="sup-shelter">Shelter</label>
+                    <select id="sup-shelter" name="shelterId" required><option value="">-- select --</option>
+                        <option th:each="s : ${picture.shelters}" th:value="${s.id}" th:text="${s.name}"></option></select></div>
+                <div class="field"><label for="sup-res">Supply</label>
+                    <select id="sup-res" name="resourceId" required><option value="">-- select --</option>
+                        <option th:each="r : ${supplies}" th:value="${r.id}" th:text="${r.organization.name + ' - ' + r.name + ' (' + r.quantity + ')'}"></option></select></div>
+                <div class="field"><label for="sup-qty">Quantity</label><input id="sup-qty" type="number" min="1" name="quantity" required/></div>
+                <div class="field"><label for="sup-by">Logged by</label><input id="sup-by" type="text" name="officerName" placeholder="District officer"/></div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Log distribution</button></div>
+        </form>
+
+        <section aria-labelledby="au-h">
+            <h2 id="au-h">Audit trail</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th scope="col">Time</th><th scope="col">What</th><th scope="col">Subject</th><th scope="col">Detail</th><th scope="col">By</th></tr></thead>
+                    <tbody>
+                    <tr th:each="e : ${picture.events}">
+                        <td class="nowrap"><th:block th:replace="~{fragments/layout :: time(${e.time})}"></th:block></td>
+                        <td><th:block th:replace="~{fragments/layout :: enumLabel(${e.type})}"></th:block>
+                            <span class="badge badge-failed" th:if="${e.needsReview}">Review</span></td>
+                        <td th:text="${e.subject}"></td>
+                        <td th:text="${e.detail}"></td>
+                        <td th:text="${e.recordedBy}"></td>
+                    </tr>
+                    <tr th:if="${picture.events.isEmpty()}"><td colspan="5" class="empty">Nothing recorded yet for this district.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </th:block>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

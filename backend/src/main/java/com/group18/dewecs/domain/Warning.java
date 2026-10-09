@@ -5,11 +5,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
@@ -87,6 +90,39 @@ public class Warning {
 
     public void setStatus(WarningStatus status) {
         this.status = status;
+    }
+
+    /**
+     * Extra districts this warning covers (a river-basin warning). Empty means just the district of the hazard event;
+     * when a basin was chosen it holds the event district and every district of the basin. Stored in the new join
+     * table warning_districts, so the warnings table itself is unchanged.
+     */
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "warning_districts",
+            joinColumns = @JoinColumn(name = "warning_id"),
+            inverseJoinColumns = @JoinColumn(name = "district_id")
+    )
+    private Set<District> affectedDistricts = new HashSet<>();
+
+    public Set<District> getAffectedDistricts() {
+        return affectedDistricts;
+    }
+
+    public void setAffectedDistricts(Set<District> affectedDistricts) {
+        this.affectedDistricts = affectedDistricts;
+    }
+
+    /** Every district this warning covers: the chosen set, or just the district of the hazard event. */
+    public Set<District> effectiveDistricts() {
+        if (affectedDistricts != null && !affectedDistricts.isEmpty()) {
+            return affectedDistricts;
+        }
+        Set<District> one = new HashSet<>();
+        if (hazardEvent != null && hazardEvent.getDistrict() != null) {
+            one.add(hazardEvent.getDistrict());
+        }
+        return one;
     }
 
     public Set<BroadcastChannel> getBroadcastChannels() {

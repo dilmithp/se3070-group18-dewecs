@@ -444,6 +444,131 @@
             },
             "description": ""
           }
+        },
+        {
+          "name": "Escalate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}/escalate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}",
+                "escalate"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "severity",
+                  "value": "CRITICAL"
+                },
+                {
+                  "key": "note",
+                  "value": "Water level above the danger mark"
+                },
+                {
+                  "key": "expiresAt",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send again on the failed channels",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}/rebroadcast",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}",
+                "rebroadcast"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Issue warning (one screen)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/issue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "issue"
+              ]
+            },
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "hazardType",
+                  "value": "FLOOD"
+                },
+                {
+                  "key": "severity",
+                  "value": "HIGH"
+                },
+                {
+                  "key": "areaMode",
+                  "value": "BASIN"
+                },
+                {
+                  "key": "riverBasinId",
+                  "value": "1"
+                },
+                {
+                  "key": "message",
+                  "value": "Move to higher ground"
+                },
+                {
+                  "key": "title",
+                  "value": "Flood Warning for Colombo"
+                },
+                {
+                  "key": "broadcastChannels",
+                  "value": "SMS"
+                },
+                {
+                  "key": "broadcastChannels",
+                  "value": "APP_PUSH"
+                },
+                {
+                  "key": "issuedByUserId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          }
         }
       ]
     },
@@ -1617,6 +1742,259 @@
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "Register hazard event (JSON body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hazardType\": \"FLOOD\",\n  \"severity\": \"HIGH\",\n  \"districtId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Escalate warning (JSON body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}/escalate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}",
+                "escalate"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"severity\": \"CRITICAL\",\n  \"note\": \"Water level above the danger mark\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Warning with delivery log (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Hazard event review (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hazard Events",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "New form",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events/new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events",
+                "new"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "hazardType",
+                  "value": "FLOOD"
+                },
+                {
+                  "key": "severity",
+                  "value": "HIGH"
+                },
+                {
+                  "key": "districtId",
+                  "value": "1"
+                },
+                {
+                  "key": "occurredAt",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail and evidence review",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Change status",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/hazard-events/{{id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "hazard-events",
+                "{{id}}",
+                "status"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "status",
+                  "value": "CONTAINED"
+                }
+              ]
             }
           }
         }

@@ -31,10 +31,13 @@
             <a th:href="@{/dashboard}" class="brand">DEWECS</a>
             <nav class="site-nav" aria-label="Main">
                 <a th:href="@{/dashboard}" th:attr="aria-current=${active == 'dashboard'} ? 'page' : null">Dashboard</a>
+                <a th:href="@{/hazard-events}" th:attr="aria-current=${active == 'hazards'} ? 'page' : null">Hazard Events</a>
                 <a th:href="@{/warnings}" th:attr="aria-current=${active == 'warnings'} ? 'page' : null">Warnings</a>
                 <a th:href="@{/shelters}" th:attr="aria-current=${active == 'shelters'} ? 'page' : null">Shelters</a>
+                <a th:href="@{/coordination}" th:attr="aria-current=${active == 'coordination'} ? 'page' : null">Coordination</a>
                 <a th:href="@{/rescue-requests}" th:attr="aria-current=${active == 'rescue'} ? 'page' : null">Rescue Requests</a>
                 <a th:href="@{/relief-supplies}" th:attr="aria-current=${active == 'supplies'} ? 'page' : null">Relief Supplies</a>
+                <a th:href="@{/relief-logistics}" th:attr="aria-current=${active == 'logistics'} ? 'page' : null">Relief Center</a>
                 <a th:href="@{/relief-distributions}" th:attr="aria-current=${active == 'distributions'} ? 'page' : null">Distributions</a>
                 <a th:href="@{/ground-reports}" th:attr="aria-current=${active == 'reports'} ? 'page' : null">Ground Reports</a>
                 <a th:href="@{/post-event-reports}" th:attr="aria-current=${active == 'analysis'} ? 'page' : null">Post-Event Analysis</a>
@@ -69,6 +72,23 @@
 
 <!-- A timestamp as yyyy-MM-dd HH:mm (the same in every browser language), or a dash when empty. -->
 <th:block th:fragment="time(value)" th:text="${#temporals.format(value, 'yyyy-MM-dd HH:mm')} ?: '—'">time</th:block>
+
+<!--
+  A Google map where the user clicks (or drags the marker) to choose a point; it fills the two inputs with the given ids.
+  Without an API key (dewecs.google.maps.api-key) nothing is shown and the inputs work as plain fields.
+  The key is a request attribute (MapsKeyFilter) so it never enters a model (and so never a JSON response).
+-->
+<div th:fragment="mapPicker(latId, lngId)" th:if="${mapsApiKey}"
+     class="map-picker" data-map-picker th:attr="data-lat-input=${latId},data-lng-input=${lngId},data-key=${mapsApiKey}">
+    <div class="map-canvas" role="application" aria-label="Map: click to choose a location"></div>
+    <p class="help"><button type="button" class="btn btn-link" data-use-my-location>Use my location</button> Click the map to place the marker.</p>
+</div>
+
+<!-- Read-only map with one marker. -->
+<div th:fragment="mapView(lat, lng)" th:if="${mapsApiKey != null and lat != null}"
+     class="map-picker" data-map-view th:attr="data-lat=${lat},data-lng=${lng},data-key=${mapsApiKey}">
+    <div class="map-canvas" role="img" aria-label="Map of the location"></div>
+</div>
 
 </body>
 </html>

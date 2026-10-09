@@ -53,6 +53,11 @@ public class ReliefConsignment {
     @OneToMany(mappedBy = "consignment", fetch = FetchType.EAGER)
     private List<ConsignmentItem> items = new ArrayList<>();
 
+    /** The tracking reference shown to people, for example #DIS-0007. Not stored. */
+    public String reference() {
+        return "#DIS-" + String.format("%04d", id == null ? 0 : id);
+    }
+
     public Long getId() {
         return id;
     }

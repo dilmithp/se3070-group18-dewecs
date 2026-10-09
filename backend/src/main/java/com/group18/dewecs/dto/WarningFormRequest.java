@@ -25,6 +25,9 @@ public class WarningFormRequest {
 
     private Set<String> broadcastChannels = new HashSet<>();
 
+    /** Optional: warn every district of this river basin as well. On an edit, blank keeps the current districts. */
+    private Long riverBasinId;
+
     public Long getHazardEventId() {
         return hazardEventId;
     }
@@ -71,5 +74,13 @@ public class WarningFormRequest {
 
     public void setBroadcastChannels(Set<String> broadcastChannels) {
         this.broadcastChannels = broadcastChannels;
+    }
+
+    public Long getRiverBasinId() {
+        return riverBasinId;
+    }
+
+    public void setRiverBasinId(Long riverBasinId) {
+        this.riverBasinId = riverBasinId;
     }
 }

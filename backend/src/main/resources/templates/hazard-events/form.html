@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Register hazard event')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('hazards')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Register hazard event', 'The event is the incident a warning is issued for.')}"></div>
+
+    <form th:action="@{/hazard-events}" th:object="${form}" method="post" class="card">
+
+        <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+        <div class="form-grid">
+            <div class="field" th:classappend="${#fields.hasErrors('hazardType')} ? 'has-error'">
+                <label for="hazardType">Hazard type <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{hazardType}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('hazardType')} ? 'true' : null, aria-describedby=${#fields.hasErrors('hazardType')} ? 'hazardType-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="t : ${hazardTypes}" th:value="${t.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${t.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="hazardType-error" th:if="${#fields.hasErrors('hazardType')}" th:errors="*{hazardType}"></p>
+            </div>
+
+            <div class="field" th:classappend="${#fields.hasErrors('severity')} ? 'has-error'">
+                <label for="severity">Initial severity <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{severity}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('severity')} ? 'true' : null, aria-describedby=${#fields.hasErrors('severity')} ? 'severity-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="sev : ${severities}" th:value="${sev.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${sev.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="severity-error" th:if="${#fields.hasErrors('severity')}" th:errors="*{severity}"></p>
+            </div>
+
+            <div class="field" th:classappend="${#fields.hasErrors('districtId')} ? 'has-error'">
+                <label for="districtId">Affected district <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{districtId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('districtId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('districtId')} ? 'districtId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+                </select>
+                <p class="field-error" id="districtId-error" th:if="${#fields.hasErrors('districtId')}" th:errors="*{districtId}"></p>
+            </div>
+
+            <div class="field">
+                <label for="occurredAt">Started at</label>
+                <input type="datetime-local" th:field="*{occurredAt}" aria-describedby="occurredAt-help"/>
+                <span class="help" id="occurredAt-help">Optional. Leave empty for now.</span>
+            </div>
+            <div class="field field-wide">
+                <span class="label">Location on the map (optional)</span>
+                <input type="hidden" th:field="*{gpsLat}"/>
+                <input type="hidden" th:field="*{gpsLng}"/>
+                <div th:replace="~{fragments/layout :: mapPicker('gpsLat', 'gpsLng')}"></div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Register event</button>
+            <a th:href="@{/hazard-events}" class="btn btn-link">Cancel</a>
+        </div>
+    </form>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+<script th:src="@{/js/map.js}" defer></script>
+</body>
+</html>

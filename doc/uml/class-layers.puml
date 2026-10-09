@@ -22,6 +22,7 @@ package "controller (officer pages, HTML or JSON)" {
   class GroundReportController
   class PostEventReportController
   class DashboardController
+  class HazardEventController
 }
 
 package "controller.api (mobile contract v1, /api/v1)" <<frozen>> {
@@ -81,6 +82,21 @@ package "service (interfaces)" {
   interface DashboardService {
     getSummary()
   }
+  interface HazardEventService {
+    create()
+    updateStatus()
+    review()
+    listActiveSummaries()
+  }
+  interface AlertBroadcastService {
+    broadcast()
+    retryFailed()
+    listLog()
+  }
+  interface ChannelSender {
+    supports()
+    send()
+  }
   interface PhotoStorageService {
     store()
     load()
@@ -99,6 +115,9 @@ package "service.impl" {
   class CitizenServiceImpl
   class PostEventReportServiceImpl
   class DashboardServiceImpl
+  class HazardEventServiceImpl
+  class AlertBroadcastServiceImpl
+  class SimulatedChannelSender
   class FileSystemPhotoStorageService
   class S3PhotoStorageService
   class PhotoContent <<helper>>
@@ -120,6 +139,8 @@ package "repository (Spring Data JPA)" {
   interface DistrictRepository
   interface PostEventReportRepository
   interface ReportMetricRepository
+  interface RiverBasinRepository
+  interface AlertDeliveryLogRepository
 }
 
 package "cross-cutting" {
@@ -139,6 +160,8 @@ ReliefSupplyController --> ReliefSupplyService
 ReliefDistributionController --> ReliefDistributionService
 GroundReportController --> GroundReportService
 PostEventReportController --> PostEventReportService
+HazardEventController --> HazardEventService
+WarningController --> HazardEventService : evidence panel
 DashboardController --> DashboardService
 CitizenApiController --> CitizenService
 GroundReportApiController --> GroundReportSubmissionService
@@ -156,6 +179,16 @@ GroundReportSubmissionServiceImpl ..|> GroundReportSubmissionService
 CitizenServiceImpl ..|> CitizenService
 PostEventReportServiceImpl ..|> PostEventReportService
 DashboardServiceImpl ..|> DashboardService
+HazardEventServiceImpl ..|> HazardEventService
+AlertBroadcastServiceImpl ..|> AlertBroadcastService
+SimulatedChannelSender ..|> ChannelSender
+AlertBroadcastServiceImpl --> ChannelSender : first sender that supports the channel
+AlertBroadcastServiceImpl --> AlertDeliveryLogRepository
+WarningServiceImpl --> AlertBroadcastService : publish, escalate, retry
+WarningServiceImpl --> RiverBasinRepository
+HazardEventServiceImpl --> HazardEventRepository
+HazardEventServiceImpl --> GroundReportRepository
+HazardEventServiceImpl --> WarningRepository
 FileSystemPhotoStorageService ..|> PhotoStorageService
 S3PhotoStorageService ..|> PhotoStorageService
 FileSystemPhotoStorageService ..> PhotoContent

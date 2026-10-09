@@ -544,3 +544,22 @@ home beside it so the space is easy to reclaim. It talks to the Spring backend o
 - Deployed backend (9 Oct 2026): the app now defaults to http://13.201.118.235:8080 (deployedBaseUrl in lib/config/app_config.dart, override with --dart-define=DEWECS_BASE_URL). The server is plain http, so release builds allow cleartext for that one IP only (res/xml/network_security_config.xml); debug builds allow http everywhere. Switch to https and remove the domain-config when the server has a certificate. Release APK rebuilt, 162 Flutter tests pass.
 
 - CORS (10 Oct 2026): /api/** now allows any origin by default (dewecs.api.cors.allowed-origin-patterns defaults to *, env DEWECS_API_CORS_ALLOWED_ORIGIN_PATTERNS to restrict or empty to turn off) so a browser client can use the deployed server. Officer pages unchanged (no CORS). Contract v1 responses unchanged. ApiFlowTest.corsHeadersAreAbsentByDefault became corsIsOpenToAnyOriginByDefault; the old assertion lives on in ApiCorsOffTest. 192 backend tests.
+
+## UC-01 finished (10 Oct 2026)
+- Built: hazard events (register, status, evidence review page), verified-evidence panel on the warning form and active hazard events on the dashboard, river-basin targeting (warning_districts), simulated multi-channel broadcast with retry, fallback and delivery log (alert_delivery_logs), escalation (UPDATED, keeps the issue time), send again on failed channels, active-warnings SVG map, JSON for all of it. Open warnings now counts ISSUED plus UPDATED.
+- New tables (owner-approved exception to the no-schema-change rule): river_basins, river_basin_districts, warning_districts, alert_delivery_logs. Run doc/neon-uc01-tables.sql in Neon BEFORE deploying (ddl-auto=validate). SQL parse-checked; Hibernate DDL for PostgreSQL compared with it by hand.
+- Not real: the channels are simulated (no SMS/e-mail/radio/push is sent), there is no monitoring feed (river levels), and nothing works offline for officers. 260 backend tests, including no-session regression tests (open-in-view is false in production).
+
+- One-screen issue page (10 Oct 2026): /warnings/issue matches Group 20 wireframe 4.4/4.5 (form left; map and Active Warnings with one-click Escalate right). WarningIssuanceService does event + draft + publish in one transaction; the optional title becomes the first line of the message (no new column). The map is an inline SVG, not a street map.
+
+## UC-02 built (11 Oct 2026)
+- New tables (owner-approved): shelter_needs, consignment_details, consignment_events, agency_notifications, report_details, report_kpis. Run doc/neon-uc02-tables.sql in Neon BEFORE deploying. Parse-checked; matches Hibernate PostgreSQL DDL.
+- Code: ReliefLogisticsService(+Impl), ReportingAnalyticsService(+Impl), ReportExportService(+Impl, SimplePdf), ReliefLogisticsController, extended PostEventReportController and ReliefDistributionController. Existing entities and tests untouched (two test cleanups gained the new tables).
+- No new test classes for UC-02 (time-boxed): smoke-run by hand on the local profile (dispatch, handover with damage, report with provisional draft, PDF and CSV). 260 existing tests pass.
+- Not done: PDF is unsigned; offline handover; session time-out; real notifications; DemoDataLoader has no needs yet.
+
+## UC-03 built (11 Oct 2026)
+- New tables (owner-approved): rescue_team_profiles, coordination_events. Run doc/neon-uc03-tables.sql in Neon BEFORE deploying. Matches Hibernate PostgreSQL DDL.
+- Code: DistrictCoordinationService(+Impl), CoordinationController, CoordinationViews, templates coordination/*, small additions to RescueRequestRepository and RescueTeamRepository. Existing entities untouched.
+- No new tests (time-boxed); smoke-run on the local profile (occupancy, over-capacity rejection, sync conflict, cross-org handshake, dispatch, status updates).
+- Not done: offline queue covers occupancy only; no real push; no auth.

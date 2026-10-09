@@ -60,3 +60,51 @@ confirmation in the browser first.
 13. **Action needs a note.** On report 3 (already reviewed) click Action with an empty note: *An action note is
     required.* Enter *Team dispatched to Kolonnawa*: *Report actioned.* Status badge **Actioned**.
 14. **Dismiss.** On report 2 click Dismiss: *Report dismissed.*
+
+## UC-01 walk-through: hazard event, evidence, basin warning, broadcast, escalation
+
+The local demo data has four hazard events (1 flood Galle, 2 landslide Kandy, 3 cyclone Colombo, 4 flood Colombo), a
+fourth district (Gampaha), three river basins (Kelani Ganga runs through Colombo and Gampaha) and warning 4, a DRAFT
+Kelani flood notice for both districts on SMS and app push. Warnings 2 and 3 (already issued) have a delivery log.
+These steps are covered by `Uc01FlowTest`, `Uc01ChannelFailureFlowTest` and `DemoDataLoaderTest`; they were not
+click-tested one by one, so check the numbers on screen.
+
+0. **One-screen issue page** (`/warnings/issue`, button *+ Issue warning* on the warnings list). It follows Group 20's wireframe: hazard type, severity, *By District* or *By River Basin*, message, optional title and *Issue Warning* on the left; the map and the *Active Warnings* list with a one-click *Escalate* button on the right. Issuing registers the hazard event, drafts and publishes the warning and broadcasts it in one step.
+1. **Dashboard.** Under the five counts, *Active hazard events* lists the four events with their verified field reports
+   and live warnings, and Review and Issue warning links.
+2. **Hazard events** (`/hazard-events`). *Register hazard event*: choose Flood, High and a district (leave the start time
+   empty). The event starts **Active**. A start time in the future is refused.
+3. **Review the evidence.** Open event 4. Only *verified* ground reports of that district show (the demo has one in
+   Colombo). Unreviewed reports never appear, so an unverified report cannot influence a warning.
+4. **Target a river basin.** Open warning 4: *Regions covered* is Colombo, Gampaha. When drafting a new warning, the
+   *Target a river basin* list adds every district of the basin to the event district.
+5. **Publish and broadcast.** Publish warning 4. The page now shows a **Delivery log**: one row per channel (SMS, app push),
+   result *Sent*, and how many registered citizens were addressed. The dashboard Open warnings goes from 2 to **3**.
+6. **Map.** On `/warnings`, *Active warnings map* marks Kandy, Colombo and Gampaha, coloured by the highest severity. A
+   marker (or its name in the list under the map) filters the table to that district.
+7. **Escalate.** On warning 4 use *Escalate this warning*: pick Critical, add a reason, submit. Flash: *Warning escalated to
+   CRITICAL and sent again.* Status **Updated**, the issue time is unchanged, the reason is added to the message, the log
+   gets new rows marked *Escalation*, and the warning still counts as open. Escalating to the same or a lower severity is
+   refused. *Escalate* is also a link on every live row of the warnings list.
+8. **Channel failure.** Restart the app with `--dewecs.alerts.simulate-failures=SMS` (the simulated SMS gateway then always
+   fails) and publish a warning with SMS: the log shows two failed SMS attempts, then radio *Sent (instead of sms)*. Use
+   `SIREN` to see a channel with no fallback stay undelivered: the page warns, and *Send again on the failed channels*
+   tries again and logs the retry.
+9. **JSON.** Every page above also answers `Accept: application/json`; the new actions take JSON bodies (see the
+   Postman folder *Officer JSON examples*).
+
+## UC-02 walk-through: relief command center and analytics report
+
+1. Relief Center: pick an incident, review inventory; record a shelter need; press Allocate on it.
+2. Dispatch more than 85% of one stock: read the split proposal, Accept split and dispatch.
+3. Open a consignment: re-route it, then Confirm field handover with a damaged quantity.
+4. Agency notifications: see what each agency was told.
+5. Post-Event Analysis: generate with an open consignment, pick Provisional draft, view indicators, download PDF and CSV.
+
+## UC-03 walk-through: coordinate shelter and rescue
+
+1. Coordination: pick a district; read the shelters, teams and incidents.
+2. Set a shelter occupancy above capacity (rejected, alternates suggested), then to the capacity (full flag).
+3. Dispatch a team to a pending incident: filter by capability, tick the handshake for another organization's team.
+4. Report the team En route, On site, Needs support (backups listed), Task complete.
+5. Read the audit trail.

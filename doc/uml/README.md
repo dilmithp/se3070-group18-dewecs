@@ -9,7 +9,7 @@ source). Edit the `.puml` files and re-render; no image is committed.
 | `class-domain.puml` | Class | The JPA entities, their enums and relationships (joined `User` / `Citizen`, post-event report and metrics) |
 | `class-layers.puml` | Class | Backend layers: controllers, service interfaces and implementations, repositories, the S3 / folder photo stores, the JSON filter and interceptor |
 | `class-mobile.puml` | Class | The Flutter app: API interface with the HTTP and demo implementations, the offline queue and sync service, controllers, screens |
-| `sequence-issue-warning.puml` | Sequence | UC-01 draft, publish, retract, lazy expiry |
+| `sequence-issue-warning.puml` | Sequence | UC-01 draft (river basin), publish and broadcast (retry, fallback, delivery log), escalate, send again, retract, lazy expiry |
 | `sequence-citizen-report.puml` | Sequence | UC-02 offline queue, retry with back-off, replay safe submit, photo upload |
 | `sequence-officer-review.puml` | Sequence | UC-02 verify, action with note, dismiss, citizen sees the outcome |
 | `sequence-shelter-rescue.puml` | Sequence | UC-03 check-in and out, rescue request assign, complete, cancel |

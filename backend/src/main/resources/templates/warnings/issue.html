@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Add new hazard event')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('warnings')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Add New Hazard Event', 'Register the hazard, choose the affected area, write the message and issue the warning in one step.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="issue-layout">
+
+        <form th:action="@{/warnings/issue}" th:object="${form}" method="post" class="card issue-form">
+
+            <p class="form-errors" role="alert" th:if="${#fields.hasErrors('global')}" th:errors="*{global}"></p>
+
+            <div class="field" th:classappend="${#fields.hasErrors('hazardType')} ? 'has-error'">
+                <label for="hazardType">Hazard Type <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{hazardType}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('hazardType')} ? 'true' : null, aria-describedby=${#fields.hasErrors('hazardType')} ? 'hazardType-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="t : ${hazardTypes}" th:value="${t.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${t.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="hazardType-error" th:if="${#fields.hasErrors('hazardType')}" th:errors="*{hazardType}"></p>
+            </div>
+
+            <div class="field" th:classappend="${#fields.hasErrors('severity')} ? 'has-error'">
+                <label for="severity">Severity Level <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{severity}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('severity')} ? 'true' : null, aria-describedby=${#fields.hasErrors('severity')} ? 'severity-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="sev : ${severities}" th:value="${sev.name()}"><th:block th:replace="~{fragments/layout :: enumLabel(${sev.name()})}"></th:block></option>
+                </select>
+                <p class="field-error" id="severity-error" th:if="${#fields.hasErrors('severity')}" th:errors="*{severity}"></p>
+            </div>
+
+            <fieldset class="area-group">
+                <legend>Affected Area</legend>
+                <div class="area-row">
+                    <label class="radio-label" for="area-district">
+                        <input type="radio" id="area-district" th:field="*{areaMode}" value="DISTRICT"/>
+                        <span>By District</span>
+                    </label>
+                    <select th:field="*{districtId}" aria-label="District" data-area="DISTRICT">
+                        <option value="">-- district --</option>
+                        <option th:each="d : ${districts}" th:value="${d.id}" th:text="${d.name}"></option>
+                    </select>
+                </div>
+                <div class="area-row">
+                    <label class="radio-label" for="area-basin">
+                        <input type="radio" id="area-basin" th:field="*{areaMode}" value="BASIN"/>
+                        <span>By River Basin</span>
+                    </label>
+                    <select th:field="*{riverBasinId}" aria-label="River basin" data-area="BASIN">
+                        <option value="">-- river basin --</option>
+                        <option th:each="rb : ${riverBasins}" th:value="${rb.id}"
+                                th:text="${rb.name + ' (' + #strings.listJoin(rb.districts.![name], ', ') + ')'}"></option>
+                    </select>
+                </div>
+                <p class="help">A river basin warns every district it runs through.</p>
+            </fieldset>
+
+            <div class="field" th:classappend="${#fields.hasErrors('message')} ? 'has-error'">
+                <label for="message">Warning Message <span class="req" aria-hidden="true">*</span></label>
+                <textarea th:field="*{message}" rows="5" aria-required="true"
+                          th:attr="aria-invalid=${#fields.hasErrors('message')} ? 'true' : null, aria-describedby=${#fields.hasErrors('message')} ? 'message-error' : null"></textarea>
+                <p class="field-error" id="message-error" th:if="${#fields.hasErrors('message')}" th:errors="*{message}"></p>
+            </div>
+
+            <div class="field">
+                <label for="title">Title (optional)</label>
+                <input type="text" th:field="*{title}" maxlength="120" placeholder="e.g., Flood Warning for Colombo"/>
+            </div>
+
+            <fieldset class="choice-group">
+                <legend>Alert channels</legend>
+                <label th:each="ch : ${channels}" class="checkbox-label">
+                    <input type="checkbox" th:field="*{broadcastChannels}" th:value="${ch.name()}"/>
+                    <span th:text="${#strings.replace(ch.name(), '_', ' ')}"></span>
+                </label>
+            </fieldset>
+
+            <div class="field" th:classappend="${#fields.hasErrors('issuedByUserId')} ? 'has-error'">
+                <label for="issuedByUserId">Issued by <span class="req" aria-hidden="true">*</span></label>
+                <select th:field="*{issuedByUserId}" aria-required="true"
+                        th:attr="aria-invalid=${#fields.hasErrors('issuedByUserId')} ? 'true' : null, aria-describedby=${#fields.hasErrors('issuedByUserId')} ? 'issuedByUserId-error' : null">
+                    <option value="">-- select --</option>
+                    <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName}"></option>
+                </select>
+                <p class="field-error" id="issuedByUserId-error" th:if="${#fields.hasErrors('issuedByUserId')}" th:errors="*{issuedByUserId}"></p>
+            </div>
+
+            <div class="form-actions">
+                <a th:href="@{/warnings}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-issue"
+                        data-confirm="Issue this warning and broadcast it now?">Issue Warning</button>
+            </div>
+        </form>
+
+        <aside class="issue-side" aria-label="Map and active warnings">
+            <section class="card map-card" aria-labelledby="map-h">
+                <h2 id="map-h" class="visually-hidden">Map of active warnings</h2>
+                <p class="empty" th:if="${map.markers.isEmpty()}">No live warning right now, so the map shows no markers.</p>
+                <svg class="sl-map sl-map-wide" th:attr="viewBox='0 0 ' + ${map.width} + ' ' + ${map.height}" role="img"
+                     aria-labelledby="map-h map-caption" focusable="false">
+                    <path class="sl-outline" th:attr="d=${map.outlinePath}"></path>
+                    <a th:each="m : ${map.markers}" th:href="@{/warnings(districtId=${m.districtId})}">
+                        <circle class="map-marker" th:classappend="'sev-' + ${#strings.toLowerCase(m.severity)}"
+                                th:attr="cx=${m.x},cy=${m.y},r=${m.radius}">
+                            <title th:text="${m.districtName + ': ' + m.warningCount + ' live warning(s), highest ' + #strings.toLowerCase(m.severity)}"></title>
+                        </circle>
+                        <text class="map-label" th:attr="x=${m.x + m.radius + 4},y=${m.y + 4}" th:text="${m.districtName}"></text>
+                    </a>
+                </svg>
+                <p class="map-caption" id="map-caption">Map: districts with a live warning, coloured by severity</p>
+            </section>
+
+            <section aria-labelledby="active-h">
+                <h2 id="active-h">Active Warnings</h2>
+                <p class="empty" th:if="${activeWarnings.isEmpty()}">No active warnings.</p>
+                <ul class="active-list" th:if="${!activeWarnings.isEmpty()}">
+                    <li class="active-card" th:each="w : ${activeWarnings}">
+                        <div class="active-text">
+                            <a th:href="@{/warnings/{id}(id=${w.id})}" class="active-title" th:text="${w.title}"></a>
+                            <span class="active-severity"><th:block th:replace="~{fragments/layout :: enumLabel(${w.severity})}"></th:block><th:block th:if="${w.status == 'UPDATED'}"> (escalated)</th:block></span>
+                        </div>
+                        <form th:if="${w.nextSeverity != null}" th:action="@{/warnings/{id}/escalate(id=${w.id})}" method="post">
+                            <input type="hidden" name="severity" th:value="${w.nextSeverity}"/>
+                            <button type="submit" class="btn btn-escalate"
+                                    th:attr="data-confirm='Escalate ' + ${w.title} + ' to ' + ${#strings.toLowerCase(w.nextSeverity)} + ' and send it again?'">
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+                                Escalate
+                            </button>
+                        </form>
+                        <span class="help" th:if="${w.nextSeverity == null}">Highest severity</span>
+                    </li>
+                </ul>
+            </section>
+        </aside>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

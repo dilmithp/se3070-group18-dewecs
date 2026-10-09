@@ -64,9 +64,15 @@ class PostEventReportNoSessionTest {
     private PostEventReportRepository reports;
     @Autowired
     private ReportMetricRepository metrics;
+    @Autowired
+    private com.group18.dewecs.repository.ReportKpiRepository reportKpis;
+    @Autowired
+    private com.group18.dewecs.repository.ReportDetailsRepository reportDetails;
 
     @AfterEach
     void cleanUp() {
+        reportKpis.deleteAll();
+        reportDetails.deleteAll();
         metrics.deleteAll();
         reports.deleteAll();
         warnings.deleteAll();

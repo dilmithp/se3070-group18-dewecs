@@ -9,4 +9,6 @@ import java.util.List;
 public interface RescueTeamRepository extends JpaRepository<RescueTeam, Long> {
 
     List<RescueTeam> findByStatus(RescueTeamStatus status);
+
+    List<RescueTeam> findByDistrict_Id(Long districtId);
 }
