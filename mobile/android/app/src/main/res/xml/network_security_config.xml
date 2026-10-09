@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Release builds: plain http is refused everywhere EXCEPT the deployed DEWECS backend below, which has no https yet.
+  Remove the domain-config block (and keep only the base-config) as soon as the server is reached over https.
+  Debug builds override this file with src/debug/res/xml/network_security_config.xml (http allowed for local testing).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">13.201.118.235</domain>
+    </domain-config>
+</network-security-config>

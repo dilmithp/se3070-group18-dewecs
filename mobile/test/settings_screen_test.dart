@@ -44,12 +44,13 @@ void main() {
   testWidgets('a failed test also says what to try next', (tester) async {
     final app = await openSettings(tester);
     app.fake.failNetwork = true;
+    await tester.enterText(find.widgetWithText(TextFormField, S.baseUrlLabel), 'http://10.0.2.2:8080');
 
     await tester.tap(find.text(S.testConnection));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Connection failed'), findsOneWidget);
-    // The default address in the tests is the emulator one, so the advice is about the emulator.
+    // The emulator address was typed, so the advice is about the emulator.
     expect(find.textContaining('emulator'), findsWidgets);
     expect(find.text(S.testConnection), findsOneWidget, reason: 'the button is usable again, not stuck on Testing');
   });

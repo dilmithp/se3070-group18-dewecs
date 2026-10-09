@@ -63,11 +63,14 @@ $env:Path = "$dt\flutter\bin;$env:Path"; $env:PUB_CACHE = "$dt\pub-cache"; $env:
 
 | Where the app runs | Server address |
 |---|---|
-| Android emulator | `http://10.0.2.2:8080` (the default on Android) |
+| The deployed backend (AWS) | `http://13.201.118.235:8080`, the default of a fresh install (see below) |
+| Android emulator, local backend | `http://10.0.2.2:8080`: type it in Settings, or run with `--dart-define=DEWECS_BASE_URL=http://10.0.2.2:8080` |
 | Physical phone on the same Wi-Fi | `http://<laptop LAN IP>:8080` (find it with `ipconfig`) and allow Java through the Windows firewall for port 8080 |
 | Physical phone over USB | run `adb reverse tcp:8080 tcp:8080`, then use `http://localhost:8080` |
 
-Officers see the reports and photos at http://localhost:8080/ground-reports.
+Officers see the reports and photos at http://localhost:8080/ground-reports (local) or http://13.201.118.235:8080/ground-reports (deployed).
+
+**The deployed server is plain http.** The default address is `deployedBaseUrl` in `lib/config/app_config.dart`. Release builds refuse http except for that one IP: `android/app/src/main/res/xml/network_security_config.xml` lists it, and debug builds allow http everywhere (`src/debug/res/xml`). Settings shows an "not encrypted" warning for it. When the server gets https, change `deployedBaseUrl` and delete the `domain-config` block. An installed app keeps the address it saved before: change it in Settings or clear the app data.
 
 ## Demo mode
 
