@@ -79,7 +79,7 @@ database is shared). Check the schema first with `../doc/neon-schema-check.sql` 
 ## Tests and coverage
 
 ```powershell
-mvn -B test        # 187 tests, H2 only, no network
+mvn -B test        # 192 tests, H2 only, no network
 mvn -B verify      # also builds the WAR; JaCoCo report in target/site/jacoco/index.html
 ```
 
@@ -154,7 +154,7 @@ profile and point the app at `http://10.0.2.2:8080` (emulator), the laptop's LAN
 | Response samples (shape-tested) | `../doc/api-samples/*.json` |
 | Postman collection | `../doc/DEWECS-mobile-api.postman_collection.json` |
 | Code | `controller/api`, `dto/api`, `mapper/GroundReportApiMapper`, `CitizenService`, `GroundReportSubmissionService`, `PhotoStorageService` |
-| Settings | `dewecs.photos.dir`, multipart limits (6 MB / 7 MB), `dewecs.api.cors.allowed-origin-patterns` |
+| Settings | `dewecs.photos.dir`, multipart limits (6 MB / 7 MB), `dewecs.api.cors.allowed-origin-patterns` (default `*`: any origin may call `/api/**` from a browser, no credentials; set a list to restrict, or empty to switch CORS off; the officer pages never get CORS headers) |
 
 GPS columns are `numeric(10,7)`; the shared Neon database needs `../doc/neon-gps-precision.sql` (run by hand after
 telling the team).
