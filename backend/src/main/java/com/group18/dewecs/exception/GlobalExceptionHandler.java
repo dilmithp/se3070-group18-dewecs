@@ -114,6 +114,9 @@ public class GlobalExceptionHandler {
     }
 
     private boolean acceptsHtml(HttpServletRequest request) {
+        if ("json".equalsIgnoreCase(request.getParameter("format"))) {
+            return false;
+        }
         String accept = request.getHeader("Accept");
         return accept != null && accept.contains("text/html");
     }

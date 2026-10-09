@@ -55,7 +55,9 @@ class S {
   static const testing = 'Testing...';
   static String connectionOk(int districts) => 'Connected. The server knows $districts districts.';
   static String connectionFailed(String why) => 'Connection failed: $why';
-  static const settingsYou = 'You';
+  static const connectionDemoNote =
+      'Demo mode is on, so this tested the built-in demo server, not the address above. Switch Demo mode off to test the real server.';
+  static String connectionTried(String address, int ms) => 'Tried $address ($ms ms)';  static const settingsYou = 'You';
   static const notIdentified = 'Not identified yet.';
   static String identifiedAs(String name, String district) => '$name, $district';
   static const demoMode = 'Demo mode';
@@ -138,6 +140,9 @@ class S {
   static String waitingToSend(int count) =>
       count == 1 ? '1 report is waiting to be sent.' : '$count reports are waiting to be sent.';
   static const sendNow = 'Send now';
+  static const summaryUnsent = 'Unsent';
+  static const summaryInReview = 'In review';
+  static const summaryResolved = 'Actioned';
   static const sectionOnPhone = 'On this phone';
   static const sectionSent = 'Sent';
   static const photoNotSent = 'The photo could not be sent.';

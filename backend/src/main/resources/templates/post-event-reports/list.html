@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Post-event reports')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('analysis')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Post-event analysis', 'How the warnings, shelters and relief performed for a hazard event.')}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <form method="post" th:action="@{/post-event-reports}" class="filter-bar card">
+        <div class="field">
+            <label for="event">Hazard event</label>
+            <select id="event" name="hazardEventId" required>
+                <option value="">Choose an event</option>
+                <option th:each="e : ${events}" th:value="${e.id}"
+                        th:text="${e.hazardType.name()} + ' in ' + ${e.district.name} + ' (' + ${#temporals.format(e.occurredAt, 'yyyy-MM-dd HH:mm')} + ')'"></option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Generate report</button>
+        </div>
+    </form>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th scope="col">Report</th>
+                <th scope="col">Event</th>
+                <th scope="col">Region</th>
+                <th scope="col">Severity</th>
+                <th scope="col">Generated</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${reports}">
+                <td th:text="'#' + ${r.id}"></td>
+                <td><th:block th:replace="~{fragments/layout :: enumLabel(${r.hazardType})}"></th:block></td>
+                <td th:text="${r.districtName}"></td>
+                <td><span th:replace="~{fragments/layout :: badge(${r.severity})}"></span></td>
+                <td><th:block th:replace="~{fragments/layout :: time(${r.generatedAt})}"></th:block></td>
+                <td><a th:href="@{/post-event-reports/{id}(id=${r.id})}" class="btn btn-link">View</a></td>
+            </tr>
+            <tr th:if="${reports.isEmpty()}">
+                <td colspan="6" class="empty">No reports yet. Choose a hazard event above and generate one.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

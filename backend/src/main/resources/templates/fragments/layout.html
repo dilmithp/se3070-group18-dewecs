@@ -11,7 +11,7 @@
       ...
     </main>
 
-  Active section keys for nav: dashboard, warnings, shelters, rescue, supplies, distributions, reports (or none).
+  Active section keys for nav: dashboard, warnings, shelters, rescue, supplies, distributions, reports, analysis (or none).
   Thymeleaf fails at render time when a call passes fewer arguments than the fragment declares, so always pass all.
 -->
 <head th:fragment="head(title)">
@@ -37,6 +37,7 @@
                 <a th:href="@{/relief-supplies}" th:attr="aria-current=${active == 'supplies'} ? 'page' : null">Relief Supplies</a>
                 <a th:href="@{/relief-distributions}" th:attr="aria-current=${active == 'distributions'} ? 'page' : null">Distributions</a>
                 <a th:href="@{/ground-reports}" th:attr="aria-current=${active == 'reports'} ? 'page' : null">Ground Reports</a>
+                <a th:href="@{/post-event-reports}" th:attr="aria-current=${active == 'analysis'} ? 'page' : null">Post-Event Analysis</a>
             </nav>
         </div>
     </header>

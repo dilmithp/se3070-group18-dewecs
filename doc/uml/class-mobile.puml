@@ -1,0 +1,156 @@
+@startuml class-mobile
+title DEWECS Report (Flutter app) - main classes
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1D4F91
+}
+
+package "api" {
+  interface DewecsApi {
+    getReferenceData()
+    identify()
+    submitReport()
+    uploadPhoto()
+    getReport()
+    listCitizenReports()
+  }
+  class HttpDewecsApi
+  class FakeDewecsApi {
+    failNetwork
+    failStatus
+  }
+  class ApiException {
+    kind : ApiErrorKind
+    status
+    detail
+    retryable
+  }
+  enum ApiErrorKind {
+    network
+    timeout
+    server
+    client
+  }
+}
+
+package "models" {
+  class QueuedReport {
+    localId
+    capturedAt
+    state : QueueState
+    attempts
+    nextAttemptAt
+    photoPath
+  }
+  enum QueueState {
+    queued
+    sending
+    synced
+    needsAttention
+  }
+  class GroundReport
+  class Citizen
+  class ReferenceData
+  class ReportItem
+}
+
+package "storage" {
+  class QueueRepository
+  interface KeyValueStore
+  interface PhotoStore
+  class SharedPreferencesStore
+  class FilePhotoStore
+}
+
+package "sync" {
+  class SyncService {
+    enqueue()
+    syncNow()
+    editAndRetry()
+    delete()
+  }
+  class ConnectivityTrigger
+}
+
+package "state (ChangeNotifier)" {
+  class SettingsController {
+    baseUrl
+    demoMode
+    api
+    apiFor()
+  }
+  class IdentityController
+  class ReferenceDataController
+  class ReportsController
+  class AppDependencies
+}
+
+package "screens" {
+  class HomeShell
+  class HomeScreen
+  class NewReportScreen
+  class ReportDetailScreen
+  class IdentifyScreen
+  class SettingsScreen
+  class SyncQueueScreen
+}
+
+class connection_hint <<function>> {
+  connectionAdvice()
+  insecureAddressWarning()
+}
+
+HttpDewecsApi ..|> DewecsApi
+FakeDewecsApi ..|> DewecsApi
+DewecsApi ..> ApiException : throws
+ApiException --> ApiErrorKind
+SharedPreferencesStore ..|> KeyValueStore
+FilePhotoStore ..|> PhotoStore
+
+QueuedReport --> QueueState
+QueueRepository --> KeyValueStore
+QueueRepository --> QueuedReport
+SyncService --> QueueRepository
+SyncService --> PhotoStore
+SyncService --> DewecsApi : current api (provider function)
+ConnectivityTrigger --> SyncService : syncNow on reconnect
+
+SettingsController --> HttpDewecsApi : demo mode off
+SettingsController --> FakeDewecsApi : demo mode on
+IdentityController --> DewecsApi : current api (provider function)
+IdentityController --> KeyValueStore
+ReferenceDataController --> DewecsApi : current api (provider function)
+ReferenceDataController --> KeyValueStore
+ReportsController --> DewecsApi : current api (provider function)
+ReportsController --> IdentityController
+ReportsController --> SyncService
+AppDependencies o-- SettingsController
+AppDependencies o-- IdentityController
+AppDependencies o-- ReferenceDataController
+AppDependencies o-- ReportsController
+AppDependencies o-- SyncService
+AppDependencies o-- ConnectivityTrigger
+
+HomeShell o-- HomeScreen
+HomeShell o-- NewReportScreen
+HomeShell o-- SettingsScreen
+HomeScreen --> ReportsController
+HomeScreen --> SyncService
+HomeScreen ..> ReportDetailScreen
+NewReportScreen --> SyncService
+ReportDetailScreen --> SyncService
+IdentifyScreen --> IdentityController
+SettingsScreen --> SettingsController
+SettingsScreen ..> connection_hint
+HomeShell ..> IdentifyScreen
+SettingsScreen ..> SyncQueueScreen : debug builds
+
+note bottom of SyncService
+  Retryable errors (network, timeout, 5xx, 408, 429) keep the report queued with back-off.
+  A permanent 4xx marks it needsAttention. capturedAt is resent unchanged,
+  so the server answers a replay with 200 and never creates a duplicate.
+end note
+@enduml

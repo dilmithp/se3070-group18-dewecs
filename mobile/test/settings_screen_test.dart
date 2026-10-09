@@ -41,6 +41,28 @@ void main() {
     expect(find.textContaining('Connection failed'), findsOneWidget);
   });
 
+  testWidgets('a failed test also says what to try next', (tester) async {
+    final app = await openSettings(tester);
+    app.fake.failNetwork = true;
+
+    await tester.tap(find.text(S.testConnection));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Connection failed'), findsOneWidget);
+    // The default address in the tests is the emulator one, so the advice is about the emulator.
+    expect(find.textContaining('emulator'), findsWidgets);
+    expect(find.text(S.testConnection), findsOneWidget, reason: 'the button is usable again, not stuck on Testing');
+  });
+
+  testWidgets('a plain http address on another machine shows the encryption warning', (tester) async {
+    await openSettings(tester);
+
+    await tester.enterText(find.widgetWithText(TextFormField, S.baseUrlLabel), 'http://192.168.1.20:8080');
+    await tester.pump();
+
+    expect(find.textContaining('not encrypted'), findsOneWidget);
+  });
+
   testWidgets('an invalid address is not saved', (tester) async {
     final app = await openSettings(tester);
 

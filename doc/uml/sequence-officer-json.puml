@@ -1,0 +1,52 @@
+@startuml sequence-officer-json
+title Officer pages answer in JSON on the same URL
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "API client\n(Postman, script)" as Client
+participant "JsonBodyFilter" as F
+participant "Controller\n(unchanged)" as C
+participant "Service" as S
+participant "JsonResponseInterceptor" as I
+participant "GlobalExceptionHandler" as E
+
+== Read: GET with Accept: application/json (or ?format=json) ==
+Client -> F : GET /shelters
+F -> C : (not a JSON body, passes through)
+C -> S : list(...)
+S --> C : shelters
+C --> I : view "shelters/list" + model
+I -> I : client wants JSON: drop form beans and binding results,\nreduce users to id and fullName
+I --> Client : 200 application/json {"shelters": [...], "statuses": [...]}
+
+== Action: POST with a JSON body ==
+Client -> F : POST /shelters  {"districtId":1,"name":"Town Hall","capacity":30}
+F -> F : flat JSON object -> request parameters (arrays become repeated parameters)
+alt body is not valid JSON or not an object
+  F --> Client : 400 problem+json
+else ok
+  F -> C : request with parameters (same @Valid binding as the HTML form)
+  alt field errors
+    C --> I : form view + BindingResult errors
+    I --> Client : 400 problem+json {"fieldErrors": {...}}
+  else business rule violated (ShelterValidationException)
+    C --> I : redirect with flash "error"
+    I --> Client : 400 problem+json {"detail": "<rule text>"}
+  else success
+    C -> S : create(...)
+    C --> I : "redirect:/shelters/7" + flash "message"
+    I --> Client : 201 Created {"message","location"} + Location header\n(200 for actions on an existing record)
+  end
+end
+
+== Errors thrown by the controller ==
+Client -> C : GET /shelters/999999
+C --> E : ResourceNotFoundException
+E --> Client : 404 application/problem+json (browsers get the HTML error page)
+
+note over I
+  Browsers (Accept contains text/html) and plain form posts
+  are not touched. /api/** (mobile contract v1) is excluded.
+end note
+@enduml

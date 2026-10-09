@@ -1,0 +1,242 @@
+@startuml class-domain
+title DEWECS - Domain model (JPA entities)
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1D4F91
+}
+
+' ---------- enums ----------
+enum HazardType {
+  FLOOD
+  LANDSLIDE
+  CYCLONE
+  DROUGHT
+}
+enum Severity {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+enum HazardEventStatus {
+  ACTIVE
+  CONTAINED
+  RESOLVED
+}
+enum WarningStatus {
+  DRAFT
+  ISSUED
+  UPDATED
+  CANCELLED
+  EXPIRED
+}
+enum BroadcastChannel {
+  SMS
+  EMAIL
+  RADIO
+  TV
+  SIREN
+  APP_PUSH
+  SOCIAL_MEDIA
+}
+enum ShelterStatus {
+  OPEN
+  FULL
+  CLOSED
+}
+enum RescueRequestStatus {
+  PENDING
+  ASSIGNED
+  COMPLETED
+  CANCELLED
+}
+enum RescueTeamStatus {
+  AVAILABLE
+  DISPATCHED
+  FULL
+  NEEDS_SUPPORT
+}
+enum ResourceType {
+  FOOD
+  WATER
+  MEDICAL_SUPPLIES
+  SHELTER_MATERIALS
+  EQUIPMENT
+  FUEL
+  OTHER
+}
+enum ConsignmentStatus {
+  PREPARING
+  DISPATCHED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+enum GroundReportStatus {
+  PENDING_SYNC
+  PENDING_REVIEW
+  VERIFIED
+  REJECTED
+  NEEDS_INFO
+  ACTIONED
+}
+enum OrganizationType {
+  GOVERNMENT
+  ARMED_FORCES
+  NGO
+  PRIVATE_DONOR
+}
+enum MetricType {
+  ALERT_TIMELINE
+  CITIZENS_REACHED
+  SHELTER_OCCUPANCY
+  RESOURCE_DISTRIBUTION
+}
+
+' ---------- reference data ----------
+class District {
+  Long id
+  String name
+}
+class Organization {
+  Long id
+  String name
+  OrganizationType type
+}
+
+' ---------- people (joined inheritance) ----------
+class User {
+  Long id
+  String fullName
+  String phone
+  String address
+}
+class Citizen {
+  String nic <<unique>>
+}
+User <|-- Citizen
+User "*" --> "1" District
+
+' ---------- warnings ----------
+class HazardEvent {
+  Long id
+  HazardType hazardType
+  Severity severityLevel
+  HazardEventStatus status
+  LocalDateTime occurredAt
+}
+class Warning {
+  Long id
+  Severity severity
+  WarningStatus status
+  String message
+  LocalDateTime issuedAt
+  LocalDateTime expiresAt
+  Set<BroadcastChannel> broadcastChannels
+}
+HazardEvent "*" --> "1" District
+Warning "*" --> "1" HazardEvent
+Warning "*" --> "1" User : issuedBy
+
+' ---------- ground reports ----------
+class GroundReport {
+  Long id
+  HazardType category
+  String photoUrl
+  BigDecimal gpsLat
+  BigDecimal gpsLng
+  String description
+  GroundReportStatus status
+  String actionNote
+  LocalDateTime submittedAt
+}
+GroundReport "*" --> "1" Citizen : reportedBy
+GroundReport "*" --> "1" District
+GroundReport "*" --> "0..1" User : verifiedBy
+
+' ---------- shelters and rescue ----------
+class Shelter {
+  Long id
+  String name
+  Integer capacity
+  Integer currentOccupancy
+  ShelterStatus status
+}
+class ShelterOccupant {
+  Long id
+  String fullName
+  String nic
+  LocalDateTime checkInTime
+  LocalDateTime checkOutTime
+}
+class RescueTeam {
+  Long id
+  String name
+  RescueTeamStatus status
+}
+class RescueRequest {
+  Long id
+  String requesterName
+  String requesterPhone
+  BigDecimal gpsLat
+  BigDecimal gpsLng
+  String description
+  Severity priority
+  RescueRequestStatus status
+  LocalDateTime submittedAt
+  LocalDateTime assignedAt
+  LocalDateTime completedAt
+}
+Shelter "*" --> "1" District
+Shelter "*" --> "1" Organization
+ShelterOccupant "*" --> "1" Shelter
+RescueTeam "*" --> "1" District
+RescueTeam "*" --> "1" Organization
+RescueRequest "*" --> "1" District
+RescueRequest "*" --> "0..1" RescueTeam : assignedTeam
+
+' ---------- relief ----------
+class Resource {
+  Long id
+  String name
+  ResourceType type
+  Integer quantity
+  String unit
+}
+class ReliefConsignment {
+  Long id
+  ConsignmentStatus status
+  LocalDateTime dispatchedAt
+  LocalDateTime deliveredAt
+}
+class ConsignmentItem {
+  Long id
+  Integer quantity
+}
+Resource "*" --> "1" District
+Resource "*" --> "1" Organization
+ReliefConsignment "*" --> "1" Organization
+ReliefConsignment "*" --> "1" Shelter
+ReliefConsignment "1" *-- "1..*" ConsignmentItem
+ConsignmentItem "*" --> "1" Resource
+
+' ---------- post-event analysis ----------
+class PostEventReport {
+  Long id
+  LocalDateTime generatedAt
+}
+class ReportMetric {
+  Long id
+  MetricType metricType
+  Double value
+}
+PostEventReport "*" --> "1" District
+PostEventReport "*" --> "1" HazardEvent
+PostEventReport "*" --> "*" Warning : relatedWarnings
+PostEventReport "*" --> "*" Shelter : relatedShelters
+PostEventReport "1" *-- "*" ReportMetric
+
+@enduml

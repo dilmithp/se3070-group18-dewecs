@@ -1,0 +1,63 @@
+@startuml sequence-citizen-report
+title UC-02 Citizen submits a ground report (offline first, safe to retry)
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor Citizen
+participant "NewReportScreen" as UI
+participant "SyncService" as Sync
+participant "QueueRepository\n+ PhotoStore" as Store
+participant "HttpDewecsApi" as Api
+participant "GroundReportApiController" as C
+participant "GroundReportSubmissionServiceImpl" as S
+participant "PhotoStorageService\n(S3 or folder)" as Photo
+database "Database" as DB
+
+Citizen -> UI : fill category, description, location, optional photo; tap Send
+UI -> Sync : enqueue(QueuedReport, capturedAt = now, kept on every retry)
+Sync -> Store : save report and copy the photo to app storage
+UI --> Citizen : "Saved on this phone. It will be sent when there is a connection."
+UI -> Sync : syncNow(force)
+
+loop for each waiting report (oldest first)
+  Sync -> Api : submitReport(citizenId, districtId, category, description, gps, capturedAt)
+  alt no network, timeout, 5xx, 408 or 429 (retryable)
+    Api --> Sync : ApiException(retryable)
+    Sync -> Store : keep queued, attempts + 1, next try with back-off (5s, 15s, 60s, 5min)
+  else permanent 4xx (server refused it)
+    Api --> Sync : ApiException(client)
+    Sync -> Store : state = needsAttention (citizen can edit and send again)
+  else reachable
+    Api -> C : POST /api/v1/ground-reports (JSON)
+    C -> S : submit(citizenId, districtId, category, ..., capturedAt)
+    S -> S : validate; capturedAt not in the future
+    S -> DB : find existing report by citizen + category + capturedAt
+    alt replay (response was lost earlier)
+      DB --> S : existing report
+      S --> C : SubmissionResult(report, created = false)
+      C --> Api : 200 OK, same report id
+    else new
+      S -> DB : INSERT ground_report (PENDING_REVIEW)
+      S --> C : SubmissionResult(report, created = true)
+      C --> Api : 201 Created
+    end
+    opt report has a photo
+      Sync -> Api : uploadPhoto(reportId, bytes)
+      Api -> C : POST /api/v1/ground-reports/{id}/photo (multipart, max 5 MB)
+      C -> S : attachPhoto(reportId, bytes)
+      S -> Photo : store(bytes) checks real JPEG/PNG/WebP, new UUID name
+      S -> DB : photoUrl = /api/v1/photos/{uuid}.ext
+    end
+    Sync -> Store : state = synced, delete the local photo copy
+  end
+end
+
+Sync --> UI : state changes (Waiting to send -> Waiting for review)
+UI --> Citizen : My reports shows the report with its server status
+
+note over Sync
+  ConnectivityTrigger calls syncNow() again
+  when the phone reconnects.
+end note
+@enduml

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config/theme.dart';
 import '../state/identity_controller.dart';
 import '../strings.dart';
 import '../widgets/needs_identity.dart';
@@ -69,15 +70,24 @@ class _HomeShellState extends State<HomeShell> {
       ],
     );
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_index])),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const Icon(Icons.shield, size: 22, color: AppColors.focusOnDark),
+            const SizedBox(width: 10),
+            Flexible(child: Text(_titles[_index], overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+      ),
       body: body,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.list_alt), label: S.navHome),
-          NavigationDestination(icon: Icon(Icons.add_circle_outline), label: S.navNewReport),
-          NavigationDestination(icon: Icon(Icons.settings), label: S.navSettings),
+          NavigationDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: S.navHome),
+          NavigationDestination(
+              icon: Icon(Icons.add_circle_outline), selectedIcon: Icon(Icons.add_circle), label: S.navNewReport),
+          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: S.navSettings),
         ],
       ),
     );

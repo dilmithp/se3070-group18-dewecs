@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface CitizenRepository extends JpaRepository<Citizen, Long> {
 
     Optional<Citizen> findByNicIgnoreCase(String nic);
+
+    long countByDistrict_Id(Long districtId);
 }
