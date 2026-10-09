@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config/theme.dart';
 import '../models/queued_report.dart';
 import '../models/report_item.dart';
 import '../state/reports_controller.dart';
@@ -67,6 +68,13 @@ class _HomeScreenState extends State<HomeScreen> {
           text: S.refreshFailed(reports.error!.detail),
           icon: Icons.error_outline,
           color: theme.colorScheme.errorContainer,
+        ),
+      if (!nothing)
+        _SummaryTiles(
+          unsent: unsent.length,
+          inReview: sentLocal.length +
+              serverReports.where((r) => r.status != 'ACTIONED' && r.status != 'REJECTED').length,
+          actioned: serverReports.where((r) => r.status == 'ACTIONED').length,
         ),
       if (waiting > 0)
         _WaitingBar(count: waiting, sending: sync.running, onSendNow: () => sync.syncNow(force: true)),
@@ -147,7 +155,8 @@ class _Banner extends StatelessWidget {
     return Semantics(
       liveRegion: true,
       child: Container(
-        color: color,
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
         padding: const EdgeInsets.all(12),
         child: Row(children: [Icon(icon), const SizedBox(width: 8), Expanded(child: Text(text))]),
       ),
@@ -164,13 +173,73 @@ class _WaitingBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(S.waitingToSend(count))),
-          FilledButton.tonal(onPressed: sending ? null : onSendNow, child: const Text(S.sendNow)),
+          Icon(Icons.schedule, color: scheme.onPrimaryContainer),
+          const SizedBox(width: 8),
+          Expanded(child: Text(S.waitingToSend(count), style: TextStyle(color: scheme.onPrimaryContainer))),
+          FilledButton(onPressed: sending ? null : onSendNow, child: const Text(S.sendNow)),
         ],
+      ),
+    );
+  }
+}
+
+/// Three counts at the top of My reports, styled like the web dashboard tiles (coloured left edge, big number).
+class _SummaryTiles extends StatelessWidget {
+  const _SummaryTiles({required this.unsent, required this.inReview, required this.actioned});
+
+  final int unsent;
+  final int inReview;
+  final int actioned;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      child: Row(
+        children: [
+          Expanded(child: _Tile(count: unsent, label: S.summaryUnsent, color: AppColors.supply)),
+          const SizedBox(width: 10),
+          Expanded(child: _Tile(count: inReview, label: S.summaryInReview, color: AppColors.shelter)),
+          const SizedBox(width: 10),
+          Expanded(child: _Tile(count: actioned, label: S.summaryResolved, color: const Color(0xFF2F8F52))),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile({required this.count, required this.label, required this.color});
+
+  final int count;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(border: Border(left: BorderSide(color: color, width: 5))),
+        padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$count', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
+            Text(label, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ],
+        ),
       ),
     );
   }
@@ -193,7 +262,11 @@ class _Message extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: Theme.of(context).colorScheme.primary),
+            CircleAvatar(
+              radius: 44,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Icon(icon, size: 44, color: Theme.of(context).colorScheme.onPrimaryContainer),
+            ),
             const SizedBox(height: 16),
             Text(title, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: 8),

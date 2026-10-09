@@ -1,0 +1,52 @@
+@startuml sequence-relief-distribution
+title UC-04 Relief distribution: dispatch, deliver, cancel
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Relief Coordinator" as Coord
+participant "ReliefDistributionController" as C
+participant "ReliefDistributionServiceImpl" as S
+database "Database" as DB
+
+== Dispatch stock to a shelter ==
+Coord -> C : POST /relief-distributions (supply, shelter, quantity)
+C -> S : create(resourceId, shelterId, quantity)
+S -> DB : load supply and shelter (404 if missing)
+alt quantity <= 0
+  S --> C : ReliefValidationException "Quantity must be a positive number."
+  C --> Coord : form shown again with the message
+else quantity > stock
+  S --> C : exception "Requested quantity exceeds available stock (120 bags available, for example)."
+  C --> Coord : form shown again with the message
+else ok
+  S -> DB : supply.quantity = quantity left after deducting
+  S -> DB : INSERT relief_consignment (status = DISPATCHED, dispatchedAt = now)
+  S -> DB : INSERT consignment_item (supply, quantity)
+  C --> Coord : redirect + flash "Relief distribution dispatched."
+end
+
+== Mark delivered ==
+Coord -> C : POST /relief-distributions/{id}/deliver
+C -> S : deliver(id)
+alt status is not DISPATCHED
+  S --> C : exception "Only dispatched distributions can be marked delivered."
+  C --> Coord : flash error
+else ok
+  S -> DB : status = DELIVERED, deliveredAt = now
+  C --> Coord : flash "Distribution marked delivered."
+end
+
+== Cancel before delivery ==
+Coord -> C : POST /relief-distributions/{id}/cancel
+C -> S : cancel(id)
+alt status is not DISPATCHED (already delivered or cancelled)
+  S --> C : exception "Only dispatched (not yet delivered) distributions can be cancelled."
+  C --> Coord : flash error
+else ok
+  S -> DB : supply.quantity + item.quantity (stock goes back)
+  S -> DB : status = CANCELLED
+  C --> Coord : flash "Distribution cancelled; stock restored."
+end
+
+@enduml

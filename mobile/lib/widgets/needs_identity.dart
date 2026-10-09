@@ -15,7 +15,11 @@ class NeedsIdentity extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.badge_outlined, size: 56, color: Theme.of(context).colorScheme.primary),
+            CircleAvatar(
+              radius: 44,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Icon(Icons.badge_outlined, size: 44, color: Theme.of(context).colorScheme.onPrimaryContainer),
+            ),
             const SizedBox(height: 16),
             Text(S.needsIdentityTitle, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
             const SizedBox(height: 8),

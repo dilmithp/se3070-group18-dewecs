@@ -1,0 +1,68 @@
+@startuml sequence-officer-review
+title UC-02 Officer reviews a ground report and the citizen sees the result
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "DMC Officer" as Officer
+participant "GroundReportController" as C
+participant "GroundReportServiceImpl" as S
+participant "GroundReportRepository" as R
+participant "PhotoApiController" as P
+actor Citizen
+participant "GroundReportApiController" as A
+database "Database" as DB
+
+Officer -> C : GET /ground-reports?status=PENDING_REVIEW
+C -> S : list(status, districtId, category)
+S -> R : find reports
+C --> Officer : list with status badges
+
+Officer -> C : GET /ground-reports/{id}
+C -> S : getById(id)
+C --> Officer : detail page (GPS with Open in map)
+Officer -> P : GET /api/v1/photos/{uuid}.png (image shown on the page)
+P --> Officer : image bytes
+
+== Verify ==
+Officer -> C : POST /ground-reports/{id}/review (reviewing user)
+C -> S : markReviewed(id, userId)
+alt status is not PENDING_REVIEW
+  S --> C : GroundReportValidationException "Only unreviewed reports can be marked reviewed."
+  C --> Officer : flash error
+else ok
+  S -> R : status = VERIFIED, verifiedBy = user
+  C --> Officer : flash "Report marked reviewed."
+end
+
+== Action (needs a note) ==
+Officer -> C : POST /ground-reports/{id}/action (note)
+C -> S : action(id, userId, note)
+alt not VERIFIED
+  S --> C : exception "Only reviewed reports can be actioned."
+else note empty
+  S --> C : exception "An action note is required."
+else ok
+  S -> R : status = ACTIONED, actionNote = note
+  C --> Officer : flash "Report actioned."
+end
+
+== Or dismiss ==
+Officer -> C : POST /ground-reports/{id}/dismiss
+C -> S : dismiss(id, userId)
+alt already ACTIONED or REJECTED
+  S --> C : exception "This report has already been actioned or dismissed."
+else ok
+  S -> R : status = REJECTED
+  C --> Officer : flash "Report dismissed."
+end
+
+== The citizen sees the outcome ==
+Citizen -> A : GET /api/v1/citizens/{citizenId}/ground-reports
+A -> DB : reports of this citizen, newest first
+A --> Citizen : status (Action taken) and actionNote
+note right of Citizen
+  The app shows "What the officers did"
+  on the report detail page.
+end note
+@enduml

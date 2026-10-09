@@ -16,6 +16,7 @@ import '../validators.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/location_section.dart';
 import '../widgets/photo_section.dart';
+import '../widgets/section_card.dart';
 
 /// The report form. Submit saves the report on the phone first, then tries to send it; a new report gets its
 /// capturedAt at that moment. With [editing] it fixes a report the server refused and sends it again.
@@ -231,56 +232,75 @@ class _NewReportScreenState extends State<NewReportScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(S.categoryLabelText, style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          if (categories.isEmpty)
-            Text(reference.loading ? S.loading : S.districtsMissing)
-          else
-            CategoryChips(
-              categories: categories,
-              selected: _category,
-              onSelected: (value) => setState(() {
-                _category = value;
-                _categoryError = null;
-              }),
-            ),
-          // Slots stay in the list even when empty: inserting or removing a list child would shift the form fields
+          // Each block is a card in a fixed list slot. Inside a card a slot may appear or vanish (an error line), which
+          // only shifts that card's own children: inserting or removing a list child here would shift the form fields
           // below it, and Flutter would then throw away their state (including validation errors).
-          _categoryError == null
-              ? const SizedBox.shrink()
-              : Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(_categoryError!, style: TextStyle(color: theme.colorScheme.error)),
-                ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _description,
-            decoration: const InputDecoration(labelText: S.descriptionLabel, alignLabelWithHint: true),
-            minLines: 3,
-            maxLines: 6,
-            maxLength: 2000,
-            textCapitalization: TextCapitalization.sentences,
-            validator: validateDescription,
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(S.categoryLabelText, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 12),
+                if (categories.isEmpty)
+                  Text(reference.loading ? S.loading : S.districtsMissing)
+                else
+                  CategoryChips(
+                    categories: categories,
+                    selected: _category,
+                    onSelected: (value) => setState(() {
+                      _category = value;
+                      _categoryError = null;
+                    }),
+                  ),
+                if (_categoryError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(_categoryError!, style: TextStyle(color: theme.colorScheme.error)),
+                  ),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          DropdownButtonFormField<int>(
-            key: ValueKey('district-$selectedDistrict-${dropdownItems.length}'),
-            initialValue: selectedDistrict,
-            decoration: const InputDecoration(labelText: S.districtLabel),
-            items: [for (final d in dropdownItems) DropdownMenuItem(value: d.id, child: Text(d.name))],
-            onChanged: (value) => setState(() => _districtId = value),
-            validator: validateDistrict,
-          ),
-          const SizedBox(height: 16),
-          LocationSection(service: deps.location, lat: _lat, lng: _lng),
-          const SizedBox(height: 16),
-          PhotoSection(photoPath: _photoPath, busy: _photoBusy, onPick: _pickPhoto, onRemove: _removePhoto),
-          _photoError == null
-              ? const SizedBox.shrink()
-              : Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(_photoError!, style: TextStyle(color: theme.colorScheme.error)),
+          const SizedBox(height: 12),
+          SectionCard(
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _description,
+                  decoration: const InputDecoration(labelText: S.descriptionLabel, alignLabelWithHint: true),
+                  minLines: 3,
+                  maxLines: 6,
+                  maxLength: 2000,
+                  textCapitalization: TextCapitalization.sentences,
+                  validator: validateDescription,
                 ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<int>(
+                  key: ValueKey('district-$selectedDistrict-${dropdownItems.length}'),
+                  initialValue: selectedDistrict,
+                  decoration: const InputDecoration(labelText: S.districtLabel),
+                  items: [for (final d in dropdownItems) DropdownMenuItem(value: d.id, child: Text(d.name))],
+                  onChanged: (value) => setState(() => _districtId = value),
+                  validator: validateDistrict,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SectionCard(child: LocationSection(service: deps.location, lat: _lat, lng: _lng)),
+          const SizedBox(height: 12),
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PhotoSection(photoPath: _photoPath, busy: _photoBusy, onPick: _pickPhoto, onRemove: _removePhoto),
+                if (_photoError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(_photoError!, style: TextStyle(color: theme.colorScheme.error)),
+                  ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: _submitting ? null : _submit,

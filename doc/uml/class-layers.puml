@@ -1,0 +1,211 @@
+@startuml class-layers
+title DEWECS backend - layers (controller, service, repository)
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #1D4F91
+}
+skinparam package {
+  BackgroundColor #F3F5F8
+}
+
+' Rule: controller -> service interface <- service impl -> repository. DTOs and mappers sit between controller and views.
+
+package "controller (officer pages, HTML or JSON)" {
+  class WarningController
+  class ShelterController
+  class RescueRequestController
+  class ReliefSupplyController
+  class ReliefDistributionController
+  class GroundReportController
+  class PostEventReportController
+  class DashboardController
+}
+
+package "controller.api (mobile contract v1, /api/v1)" <<frozen>> {
+  class ReferenceDataApiController
+  class CitizenApiController
+  class GroundReportApiController
+  class PhotoApiController
+}
+
+package "service (interfaces)" {
+  interface WarningService {
+    createDraft()
+    updateDraft()
+    publish()
+    retract()
+    list()
+  }
+  interface ShelterService {
+    create() / update()
+    close() / reopen()
+    checkIn() / checkOut()
+  }
+  interface RescueRequestService {
+    submit()
+    assign()
+    complete()
+    cancel()
+  }
+  interface ReliefSupplyService {
+    create() / update()
+    restock()
+    listLowStock()
+  }
+  interface ReliefDistributionService {
+    create()
+    deliver()
+    cancel()
+  }
+  interface GroundReportService {
+    markReviewed()
+    action()
+    dismiss()
+  }
+  interface GroundReportSubmissionService {
+    submit()
+    attachPhoto()
+    listForCitizen()
+  }
+  interface CitizenService {
+    identify()
+  }
+  interface PostEventReportService {
+    generate()
+    getById()
+    list()
+  }
+  interface DashboardService {
+    getSummary()
+  }
+  interface PhotoStorageService {
+    store()
+    load()
+    delete()
+  }
+}
+
+package "service.impl" {
+  class WarningServiceImpl
+  class ShelterServiceImpl
+  class RescueRequestServiceImpl
+  class ReliefSupplyServiceImpl
+  class ReliefDistributionServiceImpl
+  class GroundReportServiceImpl
+  class GroundReportSubmissionServiceImpl
+  class CitizenServiceImpl
+  class PostEventReportServiceImpl
+  class DashboardServiceImpl
+  class FileSystemPhotoStorageService
+  class S3PhotoStorageService
+  class PhotoContent <<helper>>
+}
+
+package "repository (Spring Data JPA)" {
+  interface WarningRepository
+  interface HazardEventRepository
+  interface ShelterRepository
+  interface ShelterOccupantRepository
+  interface RescueRequestRepository
+  interface RescueTeamRepository
+  interface ResourceRepository
+  interface ReliefConsignmentRepository
+  interface ConsignmentItemRepository
+  interface GroundReportRepository
+  interface CitizenRepository
+  interface UserRepository
+  interface DistrictRepository
+  interface PostEventReportRepository
+  interface ReportMetricRepository
+}
+
+package "cross-cutting" {
+  class GlobalExceptionHandler
+  class JsonBodyFilter
+  class JsonResponseInterceptor
+  class OfficerJsonConfig
+  class ClockConfig
+  class S3Config
+}
+
+' controllers -> services
+WarningController --> WarningService
+ShelterController --> ShelterService
+RescueRequestController --> RescueRequestService
+ReliefSupplyController --> ReliefSupplyService
+ReliefDistributionController --> ReliefDistributionService
+GroundReportController --> GroundReportService
+PostEventReportController --> PostEventReportService
+DashboardController --> DashboardService
+CitizenApiController --> CitizenService
+GroundReportApiController --> GroundReportSubmissionService
+PhotoApiController --> PhotoStorageService
+ReferenceDataApiController ..> DistrictRepository
+
+' implementations
+WarningServiceImpl ..|> WarningService
+ShelterServiceImpl ..|> ShelterService
+RescueRequestServiceImpl ..|> RescueRequestService
+ReliefSupplyServiceImpl ..|> ReliefSupplyService
+ReliefDistributionServiceImpl ..|> ReliefDistributionService
+GroundReportServiceImpl ..|> GroundReportService
+GroundReportSubmissionServiceImpl ..|> GroundReportSubmissionService
+CitizenServiceImpl ..|> CitizenService
+PostEventReportServiceImpl ..|> PostEventReportService
+DashboardServiceImpl ..|> DashboardService
+FileSystemPhotoStorageService ..|> PhotoStorageService
+S3PhotoStorageService ..|> PhotoStorageService
+FileSystemPhotoStorageService ..> PhotoContent
+S3PhotoStorageService ..> PhotoContent
+S3Config ..> S3PhotoStorageService : S3Client bean
+
+' services -> repositories (main dependencies)
+WarningServiceImpl --> WarningRepository
+WarningServiceImpl --> HazardEventRepository
+WarningServiceImpl --> UserRepository
+ShelterServiceImpl --> ShelterRepository
+ShelterServiceImpl --> ShelterOccupantRepository
+RescueRequestServiceImpl --> RescueRequestRepository
+RescueRequestServiceImpl --> RescueTeamRepository
+ReliefSupplyServiceImpl --> ResourceRepository
+ReliefDistributionServiceImpl --> ReliefConsignmentRepository
+ReliefDistributionServiceImpl --> ConsignmentItemRepository
+ReliefDistributionServiceImpl --> ResourceRepository
+ReliefDistributionServiceImpl --> ShelterRepository
+GroundReportServiceImpl --> GroundReportRepository
+GroundReportSubmissionServiceImpl --> GroundReportRepository
+GroundReportSubmissionServiceImpl --> CitizenRepository
+GroundReportSubmissionServiceImpl --> PhotoStorageService
+CitizenServiceImpl --> CitizenRepository
+PostEventReportServiceImpl --> PostEventReportRepository
+PostEventReportServiceImpl --> ReportMetricRepository
+PostEventReportServiceImpl --> WarningRepository
+PostEventReportServiceImpl --> ShelterRepository
+PostEventReportServiceImpl --> ReliefConsignmentRepository
+PostEventReportServiceImpl --> CitizenRepository
+DashboardServiceImpl --> WarningRepository
+DashboardServiceImpl --> ShelterRepository
+DashboardServiceImpl --> RescueRequestRepository
+DashboardServiceImpl --> ResourceRepository
+DashboardServiceImpl --> GroundReportRepository
+
+' cross-cutting
+OfficerJsonConfig ..> JsonResponseInterceptor : registers
+JsonBodyFilter ..> WarningController : JSON body -> request parameters
+JsonResponseInterceptor ..> WarningController : model/redirect -> JSON
+GlobalExceptionHandler ..> WarningController : exceptions -> HTML page or problem+json
+
+note bottom of GlobalExceptionHandler
+  ResourceNotFoundException -> 404
+  *ValidationException -> 400
+  unexpected -> 500 (no stack trace to the client)
+end note
+
+note right of JsonResponseInterceptor
+  Applies to officer pages only;
+  /api/** is excluded (frozen contract).
+end note
+@enduml

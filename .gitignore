@@ -16,3 +16,7 @@ CLAUDE.md
 
 # Tool state folders created in any directory
 **/.claude-flow/
+
+# Production secrets (use backend/config/application-prod.properties.example as the template)
+backend/config/application-prod.properties
+**/application-prod.properties

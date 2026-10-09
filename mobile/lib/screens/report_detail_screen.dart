@@ -12,6 +12,7 @@ import '../strings.dart';
 import '../sync/sync_service.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/report_card.dart';
+import '../widgets/section_card.dart';
 import '../widgets/status_chip.dart';
 import 'new_report_screen.dart';
 
@@ -37,55 +38,85 @@ class ReportDetailScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Row(
-              children: [
-                Icon(categoryIcon(current.category), size: 32, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(child: Text(S.categoryName(current.category), style: theme.textTheme.headlineSmall)),
-              ],
+            SectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        child: Icon(categoryIcon(current.category), size: 26, color: theme.colorScheme.onPrimaryContainer),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(S.categoryName(current.category), style: theme.textTheme.headlineSmall)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Align(alignment: Alignment.centerLeft, child: StatusChip.forItem(context, current)),
+                  if (current.queueState == QueueState.needsAttention || current.queueState == QueueState.queued)
+                    _ProblemBox(item: current),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
-            Align(alignment: Alignment.centerLeft, child: StatusChip.forItem(context, current)),
-            if (current.queueState == QueueState.needsAttention || current.queueState == QueueState.queued)
-              _ProblemBox(item: current),
-            _Field(label: S.detailDescription, value: current.description),
-            _Field(label: S.detailDistrict, value: current.districtName),
-            _Field(label: S.detailSubmitted, value: formatDisplayTime(current.submittedAt)),
-            _Field(label: S.detailLocation, value: '${current.gpsLat}, ${current.gpsLng}'),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () => _openMaps(context, current),
-                icon: const Icon(Icons.map_outlined),
-                label: const Text(S.openInMaps),
+            SectionCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _Field(label: S.detailDescription, value: current.description, first: true),
+                  _Field(label: S.detailDistrict, value: current.districtName),
+                  _Field(label: S.detailSubmitted, value: formatDisplayTime(current.submittedAt)),
+                  _Field(label: S.detailLocation, value: '${current.gpsLat}, ${current.gpsLng}'),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => _openMaps(context, current),
+                    icon: const Icon(Icons.map_outlined),
+                    label: const Text(S.openInMaps),
+                  ),
+                ],
               ),
             ),
             if (current.actionNote != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Card(
                 color: theme.colorScheme.primaryContainer,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(S.detailActionNote, style: theme.textTheme.titleSmall),
-                      const SizedBox(height: 4),
-                      Text(current.actionNote!),
+                      Row(children: [
+                        Icon(Icons.task_alt, size: 20, color: theme.colorScheme.onPrimaryContainer),
+                        const SizedBox(width: 8),
+                        Text(S.detailActionNote,
+                            style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onPrimaryContainer)),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text(current.actionNote!, style: TextStyle(color: theme.colorScheme.onPrimaryContainer)),
                     ],
                   ),
                 ),
               ),
             ],
-            const SizedBox(height: 16),
-            Text(S.detailPhoto, style: theme.textTheme.titleSmall),
-            const SizedBox(height: 8),
-            _PhotoBlock(item: current),
-            if (current.photoProblem != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('${S.photoNotSent} ${current.photoProblem}', style: TextStyle(color: theme.colorScheme.error)),
+            const SizedBox(height: 12),
+            SectionCard(
+              title: S.detailPhoto,
+              icon: Icons.photo_outlined,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _PhotoBlock(item: current),
+                  if (current.photoProblem != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text('${S.photoNotSent} ${current.photoProblem}',
+                          style: TextStyle(color: theme.colorScheme.error)),
+                    ),
+                ],
               ),
+            ),
             if (queued != null) ..._actions(context, queued),
           ],
         ),
@@ -157,16 +188,17 @@ class ReportDetailScreen extends StatelessWidget {
 }
 
 class _Field extends StatelessWidget {
-  const _Field({required this.label, required this.value});
+  const _Field({required this.label, required this.value, this.first = false});
 
   final String label;
   final String value;
+  final bool first;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 16),
+      padding: EdgeInsets.only(top: first ? 0 : 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

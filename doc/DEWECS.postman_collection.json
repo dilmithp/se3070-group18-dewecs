@@ -1334,6 +1334,293 @@
           }
         }
       ]
+    },
+    {
+      "name": "Post-Event Reports",
+      "item": [
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post-event-reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post-event-reports"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Generate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/post-event-reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post-event-reports"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "hazardEventId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/post-event-reports/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post-event-reports",
+                "{{id}}"
+              ]
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Officer JSON examples",
+      "item": [
+        {
+          "name": "Shelters list as JSON (Accept header)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Shelters list as JSON (?format=json)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/shelters?format=json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create shelter (JSON body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"districtId\": 1,\n  \"organizationId\": 1,\n  \"name\": \"Galle Municipal Hall\",\n  \"capacity\": 120\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Close shelter (no body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "close"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Check in occupant (JSON body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shelters/{{id}}/check-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shelters",
+                "{{id}}",
+                "check-in"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Amaya Silva\",\n  \"nic\": \"200000000101\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create warning (JSON body, array)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/warnings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "warnings"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hazardEventId\": 1,\n  \"issuedByUserId\": 1,\n  \"severity\": \"HIGH\",\n  \"message\": \"Move to higher ground\",\n  \"broadcastChannels\": [\"SMS\", \"RADIO\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Generate post-event report (JSON body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/post-event-reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "post-event-reports"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hazardEventId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
     }
   ]
 }

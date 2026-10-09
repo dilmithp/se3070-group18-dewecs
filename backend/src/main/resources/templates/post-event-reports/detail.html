@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Post-event report')}"></head>
+<body>
+<th:block th:replace="~{fragments/layout :: nav('analysis')}"></th:block>
+
+<main id="main" class="container">
+    <div th:replace="~{fragments/layout :: pageHeader('Post-event report', null)}"></div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <section class="card" aria-labelledby="event-h">
+        <h2 id="event-h">Event</h2>
+        <dl class="detail-grid">
+            <dt>Hazard</dt>
+            <dd><th:block th:replace="~{fragments/layout :: enumLabel(${report.hazardType})}"></th:block></dd>
+
+            <dt>Region</dt>
+            <dd th:text="${report.districtName}"></dd>
+
+            <dt>Severity</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${report.severity})}"></span></dd>
+
+            <dt>Event status</dt>
+            <dd><span th:replace="~{fragments/layout :: badge(${report.eventStatus})}"></span></dd>
+
+            <dt>Started</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${report.occurredAt})}"></th:block></dd>
+
+            <dt>Report generated</dt>
+            <dd><th:block th:replace="~{fragments/layout :: time(${report.generatedAt})}"></th:block></dd>
+        </dl>
+    </section>
+
+    <section aria-labelledby="metrics-h">
+        <h2 id="metrics-h">Metrics</h2>
+        <div class="stat-grid">
+            <div class="stat-tile" th:each="m : ${report.metrics}">
+                <span class="stat-value" th:text="${m.value}"></span>
+                <span class="stat-label" th:text="${m.title}"></span>
+                <small th:text="${m.explanation}"></small>
+            </div>
+        </div>
+    </section>
+
+    <section class="card" aria-labelledby="warn-h">
+        <h2 id="warn-h">Warnings published for this event</h2>
+        <ul th:if="${!report.warningLines.isEmpty()}"><li th:each="w : ${report.warningLines}" th:text="${w}"></li></ul>
+        <p class="empty" th:if="${report.warningLines.isEmpty()}">No warning was published for this event.</p>
+    </section>
+
+    <section class="card" aria-labelledby="shelter-h">
+        <h2 id="shelter-h">Shelters in the region</h2>
+        <ul th:if="${!report.shelterLines.isEmpty()}"><li th:each="s : ${report.shelterLines}" th:text="${s}"></li></ul>
+        <p class="empty" th:if="${report.shelterLines.isEmpty()}">The region has no shelters.</p>
+    </section>
+
+    <p><a th:href="@{/post-event-reports}" class="btn btn-link">Back to reports</a></p>
+</main>
+<script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

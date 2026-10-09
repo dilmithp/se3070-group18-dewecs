@@ -6,6 +6,7 @@ import '../state/identity_controller.dart';
 import '../state/reference_data_controller.dart';
 import '../strings.dart';
 import '../validators.dart';
+import '../widgets/section_card.dart';
 
 /// First-run (and "Identify again") form: NIC, name, phone, district. The NIC is sent but never stored.
 class IdentifyScreen extends StatefulWidget {
@@ -97,47 +98,70 @@ class _IdentifyScreenState extends State<IdentifyScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text(S.identifyIntro),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nic,
-                decoration: const InputDecoration(labelText: S.nicLabel, helperText: S.nicHelp),
-                textCapitalization: TextCapitalization.characters,
-                autocorrect: false,
-                validator: validateNic,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(labelText: S.nameLabel),
-                textCapitalization: TextCapitalization.words,
-                validator: validateFullName,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _phone,
-                decoration: const InputDecoration(labelText: S.phoneLabel),
-                keyboardType: TextInputType.phone,
-                validator: validatePhone,
-              ),
-              const SizedBox(height: 16),
-              if (districts.isEmpty) ...[
-                Text(reference.loading ? S.loading : S.districtsMissing),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: reference.loading ? null : reference.refresh,
-                  child: const Text(S.reloadDistricts),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ] else
-                DropdownButtonFormField<int>(
-                  initialValue: _districtId,
-                  decoration: const InputDecoration(labelText: S.districtLabel),
-                  items: [
-                    for (final d in districts) DropdownMenuItem(value: d.id, child: Text(d.name)),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.shield_outlined, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(S.identifyIntro,
+                          style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                    ),
                   ],
-                  onChanged: (value) => setState(() => _districtId = value),
-                  validator: validateDistrict,
                 ),
+              ),
+              const SizedBox(height: 12),
+              SectionCard(
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _nic,
+                      decoration: const InputDecoration(labelText: S.nicLabel, helperText: S.nicHelp),
+                      textCapitalization: TextCapitalization.characters,
+                      autocorrect: false,
+                      validator: validateNic,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _name,
+                      decoration: const InputDecoration(labelText: S.nameLabel),
+                      textCapitalization: TextCapitalization.words,
+                      validator: validateFullName,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phone,
+                      decoration: const InputDecoration(labelText: S.phoneLabel),
+                      keyboardType: TextInputType.phone,
+                      validator: validatePhone,
+                    ),
+                    const SizedBox(height: 16),
+                    if (districts.isEmpty) ...[
+                      Text(reference.loading ? S.loading : S.districtsMissing),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: reference.loading ? null : reference.refresh,
+                        child: const Text(S.reloadDistricts),
+                      ),
+                    ] else
+                      DropdownButtonFormField<int>(
+                        initialValue: _districtId,
+                        decoration: const InputDecoration(labelText: S.districtLabel),
+                        items: [
+                          for (final d in districts) DropdownMenuItem(value: d.id, child: Text(d.name)),
+                        ],
+                        onChanged: (value) => setState(() => _districtId = value),
+                        validator: validateDistrict,
+                      ),
+                  ],
+                ),
+              ),
               if (_message != null) ...[
                 const SizedBox(height: 16),
                 Semantics(

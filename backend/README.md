@@ -39,6 +39,18 @@ $env:DB_USERNAME = "<user>"
 $env:DB_PASSWORD = "<password>"
 ```
 
+**Production profile (`prod`).** Copy `config/application-prod.properties.example` to
+`src/main/resources/application-prod.properties` (git-ignored), fill in the values, rebuild and run:
+`java -jar target\dewecs-0.0.1-SNAPSHOT.war --spring.profiles.active=prod`. Warning: Maven packages this file into the
+WAR, so a WAR built with it contains the secrets. Never share or upload that WAR; on a host, prefer environment
+variables. For S3 the file can also hold `dewecs.photos.s3.access-key` / `secret-key`.
+
+**Photo storage.** By default photos are saved in a local folder. To use S3 set `DEWECS_PHOTOS_STORAGE=s3`,
+`DEWECS_PHOTOS_S3_BUCKET`, `DEWECS_PHOTOS_S3_REGION` and the standard `AWS_ACCESS_KEY_ID` /
+`AWS_SECRET_ACCESS_KEY`. The `/api/v1/photos/{name}` URLs and rules do not change: the app streams the object, the
+bucket stays private (`S3PhotoStorageService`, objects under `ground-reports/`). The IAM user needs only
+`s3:PutObject`, `s3:GetObject` and `s3:DeleteObject` on that bucket.
+
 IntelliJ: Run | Edit Configurations | the Spring Boot configuration | Environment variables:
 `DB_URL=...;DB_USERNAME=...;DB_PASSWORD=...`. Never commit real values. `.env` is git-ignored and
 `.env.example` holds placeholders only.
@@ -67,7 +79,7 @@ database is shared). Check the schema first with `../doc/neon-schema-check.sql` 
 ## Tests and coverage
 
 ```powershell
-mvn -B test        # 152 tests, H2 only, no network
+mvn -B test        # 187 tests, H2 only, no network
 mvn -B verify      # also builds the WAR; JaCoCo report in target/site/jacoco/index.html
 ```
 
@@ -87,9 +99,28 @@ Last measured: 82% of lines and 70% of branches overall (controller.api 89%/62%,
 | Shelter and rescue | `/shelters` (+ `new`, `{id}`, `edit`, `close`, `reopen`, `check-in`, `check-out/{occupantId}`); `/rescue-requests` (+ `new`, `{id}`, `assign`, `complete`, `cancel`) |
 | Relief distribution | `/relief-supplies` (+ `new`, `{id}`, `edit`, `restock`); `/relief-distributions` (+ `new`, `{id}`, `deliver`, `cancel`) |
 | Reporting (ground-report review) | `/ground-reports`, `/ground-reports/{id}`, POST `/{id}/review`, `/{id}/action`, `/{id}/dismiss`; dashboard at `/` and `/dashboard` |
+| Post-event analysis | `/post-event-reports` (list + generate form), POST `/post-event-reports` (hazardEventId), `/post-event-reports/{id}` |
 
-All 44 routes are in `../doc/DEWECS.postman_collection.json`. Pages are HTML; successful actions redirect with a
+All 47 routes are in `../doc/DEWECS.postman_collection.json`. Pages are HTML; successful actions redirect with a
 flash `message`, rule violations redirect with a flash `error`.
+
+## JSON for the officer pages
+
+Every officer page also answers in JSON on the same URL. The controllers are unchanged: a filter and an interceptor in
+`config/` (`JsonBodyFilter`, `JsonResponseInterceptor`, `OfficerJsonConfig`) do the translation. `/api/v1` (the mobile
+contract) is not touched.
+
+| You send | You get |
+|---|---|
+| `GET /shelters` with `Accept: application/json` (or `?format=json`) | the page model as JSON: `{"shelters":[...],"statuses":[...],...}`; form beans and binding results are left out; staff and citizen users in drop-downs are reduced to `id` and `fullName` |
+| `POST /shelters` with `Content-Type: application/json` and a flat JSON body (arrays allowed, e.g. `broadcastChannels`) | **201** `{"message","location"}` and a `Location` header for a create; **200** for other actions (`/shelters/1/close` needs no body) |
+| invalid fields | **400** `application/problem+json` with `fieldErrors` |
+| a business-rule violation (closed shelter, over capacity ...) | **400** problem with the rule text in `detail` |
+| unknown id | **404** problem |
+
+Browsers (`Accept` has `text/html`) and plain form posts behave exactly as before. A JSON body is converted into the
+request parameters, so the same validation runs. Like the pages, this has no authentication yet (see Known
+limitations), so do not expose it beyond a trusted network.
 
 ## UI (Thymeleaf pages)
 
@@ -148,5 +179,11 @@ telling the team).
   dashboard can briefly count an overdue warning as open.
 - A distribution to a CLOSED shelter is accepted. One item per distribution.
 - No screens to create districts, organizations, users, hazard events, teams or citizens: use the `local` demo data.
-- No pagination. `PostEventReport` and `ReportMetric` belong to the shared domain model and have no service or page.
+- No pagination.
+- Post-event report: a snapshot, so each generation creates a new report (nothing is recalculated later). It has four
+  metrics: alert timeline (minutes from event start to the first published warning), citizens reached (citizens
+  registered in the district, counted only when a warning was published; there is no delivery log, so this is an
+  audience size, not confirmed receipt), shelter occupancy (% across the district's shelters at generation time) and
+  resources distributed (units in DELIVERED consignments to the district's shelters since the event started). Related
+  warnings are the event's ISSUED, UPDATED and EXPIRED warnings. There is no PDF/CSV export.
 - The artifact is a WAR but has no `SpringBootServletInitializer`: run it with `java -jar`, not on an external Tomcat.

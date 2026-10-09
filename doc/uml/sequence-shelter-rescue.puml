@@ -1,0 +1,82 @@
+@startuml sequence-shelter-rescue
+title UC-03 Shelter check-in and rescue request handling
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "Rescue Coordinator" as Coord
+participant "ShelterController" as SC
+participant "ShelterServiceImpl" as SS
+participant "RescueRequestController" as RC
+participant "RescueRequestServiceImpl" as RS
+database "Database" as DB
+
+== Check an occupant in ==
+Coord -> SC : POST /shelters/{id}/check-in (fullName, NIC)
+SC -> SS : checkIn(shelterId, fullName, nic)
+SS -> DB : load shelter
+alt shelter is CLOSED
+  SS --> SC : ShelterValidationException "Cannot check in: shelter is closed."
+  SC --> Coord : redirect + flash error
+else occupancy >= capacity
+  SS --> SC : ShelterValidationException "Cannot check in: shelter is at full capacity."
+  SC --> Coord : redirect + flash error
+else ok
+  SS -> DB : INSERT shelter_occupant (checkInTime = now)
+  SS -> DB : currentOccupancy + 1
+  opt occupancy reaches capacity
+    SS -> DB : status = FULL
+  end
+  SC --> Coord : redirect + flash "Occupant checked in."
+end
+
+== Check out ==
+Coord -> SC : POST /shelters/{id}/check-out/{occupantId}
+SC -> SS : checkOut(shelterId, occupantId)
+SS -> DB : checkOutTime = now, currentOccupancy - 1 (never below 0)
+opt shelter was FULL
+  SS -> DB : status = OPEN
+end
+SC --> Coord : flash "Occupant checked out."
+
+== Submit a rescue request ==
+Coord -> RC : POST /rescue-requests (district, requester, GPS, description, priority)
+RC -> RS : submit(...)
+RS -> DB : INSERT rescue_request (status = PENDING, submittedAt = now)
+RC --> Coord : redirect + flash "Rescue request submitted."
+
+== Assign a team ==
+Coord -> RC : POST /rescue-requests/{id}/assign (teamId)
+RC -> RS : assign(requestId, teamId)
+alt request is not PENDING
+  RS --> RC : RescueRequestValidationException "Only pending requests can be assigned."
+else team is not AVAILABLE
+  RS --> RC : exception "Team is not available for assignment."
+else ok
+  RS -> DB : team.status = DISPATCHED
+  RS -> DB : request.assignedTeam = team, status = ASSIGNED, assignedAt = now
+  RC --> Coord : flash "Rescue team assigned."
+end
+
+== Complete or cancel (both free the team) ==
+Coord -> RC : POST /rescue-requests/{id}/complete
+RC -> RS : complete(id)
+alt request is not ASSIGNED
+  RS --> RC : exception "Only assigned requests can be completed."
+else ok
+  RS -> DB : status = COMPLETED, completedAt = now
+  RS -> DB : team.status = AVAILABLE
+  RC --> Coord : flash "Rescue request completed."
+end
+Coord -> RC : POST /rescue-requests/{id}/cancel
+RC -> RS : cancel(id)
+alt request is not PENDING or ASSIGNED
+  RS --> RC : exception "Only pending or assigned requests can be cancelled."
+else ok
+  RS -> DB : status = CANCELLED
+  opt a team was assigned
+    RS -> DB : team.status = AVAILABLE
+  end
+  RC --> Coord : flash "Rescue request cancelled."
+end
+@enduml

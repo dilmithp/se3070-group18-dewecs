@@ -1,0 +1,134 @@
+@startuml usecase
+title DEWECS - Use case diagram
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #E1EDFB
+  BorderColor #1D4F91
+}
+skinparam actor {
+  BackgroundColor #FFEFC2
+  BorderColor #664500
+}
+
+actor "Citizen\n(Flutter app)" as Citizen
+actor "DMC Officer" as Officer
+actor "Rescue Coordinator" as Rescue
+actor "Relief Coordinator" as Relief
+
+rectangle "DEWECS" {
+
+  package "UC-01 Warning issuance" {
+    usecase "Create draft warning" as UC01a
+    usecase "Edit draft warning" as UC01b
+    usecase "Publish warning" as UC01c
+    usecase "Retract warning" as UC01d
+    usecase "List and filter warnings" as UC01e
+    usecase "Check region and message" as UC01v
+    usecase "Expire overdue warnings" as UC01x
+  }
+
+  package "UC-02 Ground reporting" {
+    usecase "Identify by NIC" as UC02a
+    usecase "Submit ground report" as UC02b
+    usecase "Attach photo" as UC02c
+    usecase "Save offline and sync later" as UC02d
+    usecase "View my reports" as UC02e
+    usecase "Review report (verify)" as UC02f
+    usecase "Action report with note" as UC02g
+    usecase "Dismiss report" as UC02h
+  }
+
+  package "UC-03 Shelter and rescue" {
+    usecase "Manage shelter\n(create, edit, close, reopen)" as UC03a
+    usecase "Check in occupant" as UC03b
+    usecase "Check out occupant" as UC03c
+    usecase "Submit rescue request" as UC03d
+    usecase "Assign rescue team" as UC03e
+    usecase "Complete rescue request" as UC03f
+    usecase "Cancel rescue request" as UC03g
+  }
+
+  package "UC-04 Relief distribution" {
+    usecase "Manage relief supply\n(create, edit)" as UC04a
+    usecase "Restock supply" as UC04b
+    usecase "Create distribution" as UC04c
+    usecase "Mark distribution delivered" as UC04d
+    usecase "Cancel distribution" as UC04e
+    usecase "Check stock and capacity" as UC04v
+  }
+
+  package "UC-05 Post-event analysis" {
+    usecase "Generate post-event report" as UC05a
+    usecase "View report and metrics" as UC05b
+  }
+
+  usecase "View dashboard counts" as UCd
+  usecase "Receive JSON instead of HTML" as UCj
+}
+
+' Officer
+Officer --> UC01a
+Officer --> UC01b
+Officer --> UC01c
+Officer --> UC01d
+Officer --> UC01e
+Officer --> UC02f
+Officer --> UC02g
+Officer --> UC02h
+Officer --> UC05a
+Officer --> UC05b
+Officer --> UCd
+
+' Rescue coordinator
+Rescue --> UC03a
+Rescue --> UC03b
+Rescue --> UC03c
+Rescue --> UC03d
+Rescue --> UC03e
+Rescue --> UC03f
+Rescue --> UC03g
+Rescue --> UCd
+
+' Relief coordinator
+Relief --> UC04a
+Relief --> UC04b
+Relief --> UC04c
+Relief --> UC04d
+Relief --> UC04e
+Relief --> UCd
+
+' Citizen
+Citizen --> UC02a
+Citizen --> UC02b
+Citizen --> UC02e
+
+' include and extend
+UC01c ..> UC01v : <<include>>
+UC01e ..> UC01x : <<include>>
+UC02b ..> UC02a : <<include>>
+UC02b ..> UC02d : <<include>>
+UC02c ..> UC02b : <<extend>>
+UC03e ..> UC03d : <<precondition: pending>>
+UC04c ..> UC04v : <<include>>
+UC04e ..> UC04v : <<include>>
+UC05a ..> UC01e : <<uses published warnings>>
+UC05a ..> UC03a : <<uses shelters>>
+UC05a ..> UC04d : <<uses delivered stock>>
+UCj ..> UCd : <<extend>>
+
+note right of UC02g
+  An action note is required.
+  Only a verified report can be actioned.
+end note
+
+note bottom of UC04e
+  Only a dispatched (not yet delivered)
+  distribution can be cancelled; the stock
+  goes back to the supply.
+end note
+
+note "Roles are conceptual: the system has no login yet,\nso every officer page is open to any user on the network." as N1
+Officer .. N1
+@enduml

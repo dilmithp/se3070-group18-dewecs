@@ -1,0 +1,14 @@
+# Template. Copy to application-prod.properties (git-ignored) and fill in the real values. Placeholders only here.
+
+spring.datasource.url=jdbc:postgresql://<host>/<database>?sslmode=require
+spring.datasource.username=<user>
+spring.datasource.password=<password>
+spring.jpa.hibernate.ddl-auto=validate
+
+dewecs.photos.storage=s3
+dewecs.photos.s3.bucket=<bucket>
+dewecs.photos.s3.region=<aws-region, e.g. us-east-2>
+dewecs.photos.s3.access-key=<access key id>
+dewecs.photos.s3.secret-key=<secret access key>
+
+dewecs.google.maps.api-key=<google maps api key>

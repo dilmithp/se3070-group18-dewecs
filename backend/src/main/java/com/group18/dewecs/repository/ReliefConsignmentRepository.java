@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface ReliefConsignmentRepository extends JpaRepository<ReliefConsignment, Long> {
 
+    List<ReliefConsignment> findByStatusAndShelter_District_Id(ConsignmentStatus status, Long districtId);
+
     @Query("""
             SELECT DISTINCT c FROM ReliefConsignment c JOIN c.items i
             WHERE (:status IS NULL OR c.status = :status)

@@ -1,0 +1,62 @@
+@startuml sequence-issue-warning
+title UC-01 Issue a warning: draft, publish, retract
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "DMC Officer" as Officer
+participant "WarningController" as C
+participant "WarningServiceImpl" as S
+participant "WarningRepository" as WR
+database "Database" as DB
+
+== Create the draft ==
+Officer -> C : POST /warnings (event, severity, message, channels, expiry)
+C -> C : Bean Validation (@Valid form)
+alt form invalid
+  C --> Officer : form shown again with field errors
+else valid
+  C -> S : createDraft(eventId, severity, message, expiresAt, channels, userId)
+  S -> S : find hazard event and issuing user (404 if missing)
+  S -> WR : save(Warning status = DRAFT, issuedAt = null)
+  WR -> DB : INSERT warnings + warning_broadcast_channels
+  S --> C : Warning
+  C --> Officer : redirect /warnings/{id} + flash "Draft warning created."
+end
+
+== Publish ==
+Officer -> C : POST /warnings/{id}/publish
+C -> S : publish(id)
+S -> WR : findById(id)
+alt not a draft
+  S --> C : WarningValidationException "Only draft warnings can be edited or published."
+  C --> Officer : redirect + flash error
+else no region or no message
+  S --> C : WarningValidationException (region / message required)
+  C --> Officer : redirect + flash error
+else ok
+  S -> S : status = ISSUED, issuedAt = now
+  S -> WR : save(warning)
+  C --> Officer : redirect + flash "Warning published."
+end
+
+== Retract ==
+Officer -> C : POST /warnings/{id}/retract
+C -> S : retract(id)
+alt status is not DRAFT or published
+  S --> C : WarningValidationException
+  C --> Officer : flash error
+else ok
+  S -> S : status = CANCELLED
+  S -> WR : save(warning)
+  C --> Officer : redirect + flash "Warning retracted."
+end
+
+== Lazy expiry on every list ==
+Officer -> C : GET /warnings
+C -> S : list(statusFilter, districtId)
+S -> S : expireOverdue(): ISSUED warnings past expiresAt -> EXPIRED
+S -> WR : save changed warnings
+S --> C : warnings
+C --> Officer : page (or JSON when Accept: application/json)
+@enduml

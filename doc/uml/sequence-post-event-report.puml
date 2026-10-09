@@ -1,0 +1,49 @@
+@startuml sequence-post-event-report
+title UC-05 Generate a post-event analysis report
+autonumber
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+
+actor "DMC Officer" as Officer
+participant "PostEventReportController" as C
+participant "PostEventReportServiceImpl" as S
+participant "Repositories\n(event, warning, shelter, citizen,\nconsignment, report, metric)" as R
+participant "PostEventReportMapper" as M
+database "Database" as DB
+
+== Generate (a new snapshot every time) ==
+Officer -> C : POST /post-event-reports (hazardEventId)
+alt no event chosen
+  C --> Officer : redirect + flash "Choose a hazard event to report on."
+else event chosen
+  C -> S : generate(hazardEventId)
+  S -> R : find hazard event
+  alt unknown event
+    R --> S : empty
+    S --> C : ResourceNotFoundException (404)
+    C --> Officer : error page or problem+json
+  else found
+    S -> R : published warnings of the event (ISSUED, UPDATED, EXPIRED)
+    S -> R : shelters of the event's district
+    S -> DB : INSERT post_event_report + links to warnings and shelters
+    S -> S : ALERT_TIMELINE = minutes from event start to the first published warning
+    S -> R : count citizens of the district
+    S -> S : CITIZENS_REACHED = citizens in district (0 when no warning was published)
+    S -> S : SHELTER_OCCUPANCY = total occupancy / total capacity x 100
+    S -> R : DELIVERED consignments to the district's shelters
+    S -> S : RESOURCE_DISTRIBUTION = units delivered since the event started
+    S -> DB : INSERT report_metrics (3 or 4 rows)
+    S --> C : PostEventReport
+    C --> Officer : redirect /post-event-reports/{id} + flash "Post-event report generated."
+  end
+end
+
+== View ==
+Officer -> C : GET /post-event-reports/{id}
+C -> S : getById(id)
+S -> DB : load report with warnings and shelters in one query (open-in-view is off)
+C -> S : listMetrics(id)
+C -> M : toResponse(report, metrics)
+M --> C : PostEventReportResponse (title, value and explanation per metric)
+C --> Officer : report page (or JSON when Accept: application/json)
+@enduml
