@@ -1,0 +1,12 @@
+{
+  "shelters": [
+    {"id": 1, "name": "Town Hall Shelter", "districtName": "Colombo", "districtId": 1, "capacity": 50,
+     "currentOccupancy": 20, "status": "OPEN", "organizationName": "Red Cross"},
+    {"id": 2, "name": "Temple Hall", "districtName": "Galle", "districtId": 2, "capacity": 10,
+     "currentOccupancy": 10, "status": "FULL", "organizationName": "Disaster Management Centre"}
+  ],
+  "statuses": ["OPEN", "FULL", "CLOSED"],
+  "districts": [{"id": 1, "name": "Colombo"}, {"id": 2, "name": "Galle"}],
+  "selectedStatus": null,
+  "selectedDistrictId": null
+}

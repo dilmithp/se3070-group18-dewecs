@@ -1,0 +1,4 @@
+{
+  "districts": [{"id": 1, "name": "Colombo"}, {"id": 2, "name": "Galle"}],
+  "priorities": ["LOW", "MODERATE", "HIGH", "CRITICAL"]
+}

@@ -1,0 +1,10 @@
+{
+  "request": {"id": 3, "requesterName": "Nimal Perera", "requesterPhone": "0771234567", "districtName": "Colombo",
+              "districtId": 1, "gpsLat": 6.9271234, "gpsLng": 79.8612345, "description": "Family stuck on the roof",
+              "priority": "CRITICAL", "status": "PENDING", "assignedTeamName": null,
+              "submittedAt": "2026-10-09T10:00:00.000", "assignedAt": null, "completedAt": null},
+  "availableTeams": [
+    {"id": 8, "name": "Alpha Team", "district": {"id": 1, "name": "Colombo"}, "status": "AVAILABLE",
+     "organization": {"id": 5, "name": "Red Cross", "type": "NGO"}}
+  ]
+}

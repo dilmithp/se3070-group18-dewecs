@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../api/dewecs_api.dart';
+import '../api/operations_api.dart';
 import '../storage/file_photo_store.dart';
 import '../storage/key_value_store.dart';
 import '../storage/photo_store.dart';
@@ -13,8 +14,10 @@ import 'location_service.dart';
 import 'photo_picker.dart';
 import 'reference_data_controller.dart';
 import 'reports_controller.dart';
+import 'rescue_requests_controller.dart';
 import 'url_opener.dart';
 import 'settings_controller.dart';
+import 'shelters_controller.dart';
 
 /// Creates the controllers once and hands them to the widget tree with Provider.
 class AppDependencies {
@@ -24,6 +27,8 @@ class AppDependencies {
     required this.reference,
     required this.sync,
     required this.reports,
+    required this.shelters,
+    required this.rescue,
     required this.opener,
     required this.photos,
     required this.location,
@@ -35,6 +40,8 @@ class AppDependencies {
   final ReferenceDataController reference;
   final SyncService sync;
   final ReportsController reports;
+  final SheltersController shelters;
+  final RescueRequestsController rescue;
   final UrlOpener opener;
   final PhotoStore photos;
   final LocationService location;
@@ -45,13 +52,14 @@ class AppDependencies {
   factory AppDependencies.create(
     KeyValueStore store, {
     DewecsApi? apiOverride,
+    OperationsApi? operationsOverride,
     PhotoStore? photoStore,
     LocationService? location,
     PhotoPicker? picker,
     UrlOpener? opener,
     bool autoSchedule = true,
   }) {
-    final settings = SettingsController(store, apiOverride: apiOverride);
+    final settings = SettingsController(store, apiOverride: apiOverride, operationsOverride: operationsOverride);
     DewecsApi api() => settings.api;
     final identity = IdentityController(store, api);
     final reference = ReferenceDataController(store, api);
@@ -65,6 +73,8 @@ class AppDependencies {
       autoSchedule: autoSchedule,
     );
     final reports = ReportsController(store, api, identity, sync);
+    final shelters = SheltersController(() => settings.operations);
+    final rescue = RescueRequestsController(() => settings.operations);
     // After a new identification (for example after a server reset) unsent reports move to the new citizen.
     identity.onIdentified = (citizen) async {
       await sync.adoptCitizen(citizen.id);
@@ -74,13 +84,17 @@ class AppDependencies {
       ..registerClearable(identity)
       ..registerClearable(reference)
       ..registerClearable(sync)
-      ..registerClearable(reports);
+      ..registerClearable(reports)
+      ..registerClearable(shelters)
+      ..registerClearable(rescue);
     return AppDependencies._(
       settings: settings,
       identity: identity,
       reference: reference,
       sync: sync,
       reports: reports,
+      shelters: shelters,
+      rescue: rescue,
       opener: opener ?? launchExternally,
       photos: photos,
       location: location ?? GeolocatorLocationService(),
@@ -110,6 +124,8 @@ class AppDependencies {
         ChangeNotifierProvider<ReferenceDataController>.value(value: reference),
         ChangeNotifierProvider<SyncService>.value(value: sync),
         ChangeNotifierProvider<ReportsController>.value(value: reports),
+        ChangeNotifierProvider<SheltersController>.value(value: shelters),
+        ChangeNotifierProvider<RescueRequestsController>.value(value: rescue),
       ],
       child: child,
     );

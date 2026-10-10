@@ -1,0 +1,15 @@
+{
+  "requests": [
+    {"id": 3, "requesterName": "Nimal Perera", "requesterPhone": "0771234567", "districtName": "Colombo", "districtId": 1,
+     "gpsLat": 6.9271234, "gpsLng": 79.8612345, "description": "Family stuck on the roof", "priority": "CRITICAL",
+     "status": "PENDING", "assignedTeamName": null, "submittedAt": "2026-10-09T10:00:00.000",
+     "assignedAt": null, "completedAt": null},
+    {"id": 4, "requesterName": "Saman Kumara", "requesterPhone": "0712223344", "districtName": "Galle", "districtId": 2,
+     "gpsLat": null, "gpsLng": null, "description": "Road cut off by landslide", "priority": "MODERATE",
+     "status": "ASSIGNED", "assignedTeamName": "Alpha Team", "submittedAt": "2026-10-09T07:30:00.000",
+     "assignedAt": "2026-10-09T08:00:00.000", "completedAt": null}
+  ],
+  "statuses": ["PENDING", "ASSIGNED", "COMPLETED", "CANCELLED"],
+  "priorities": ["LOW", "MODERATE", "HIGH", "CRITICAL"],
+  "districts": [{"id": 1, "name": "Colombo"}, {"id": 2, "name": "Galle"}]
+}
