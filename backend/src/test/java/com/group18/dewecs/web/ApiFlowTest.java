@@ -156,9 +156,11 @@ class ApiFlowTest extends ApiTestSupport {
     }
 
     @Test
-    void corsHeadersAreAbsentByDefault() throws Exception {
+    void corsIsOpenToAnyOriginByDefault() throws Exception {
+        // The default changed on 10 Oct 2026 (deployed server, browser clients). The old "no CORS headers" behaviour
+        // is still covered, with the property set to empty, by ApiCorsOffTest.
         mvc.perform(get("/api/v1/reference-data").header("Origin", "http://localhost:5555"))
                 .andExpect(status().isOk())
-                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5555"));
     }
 }
