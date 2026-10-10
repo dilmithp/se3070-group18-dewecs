@@ -3,14 +3,17 @@ import 'package:http/http.dart' as http;
 
 import '../api/dewecs_api.dart';
 import '../api/fake_dewecs_api.dart';
+import '../api/fake_operations_api.dart';
 import '../api/http_dewecs_api.dart';
+import '../api/http_operations_api.dart';
+import '../api/operations_api.dart';
 import '../config/app_config.dart';
 import '../storage/key_value_store.dart';
 import 'clearable.dart';
 
 /// Server address and Demo mode, and the API object the rest of the app uses.
 class SettingsController extends ChangeNotifier {
-  SettingsController(this._store, {this.apiOverride, this.httpClient}) {
+  SettingsController(this._store, {this.apiOverride, this.operationsOverride, this.httpClient}) {
     _baseUrl = _store.getString(_kBaseUrl) ?? defaultBaseUrl();
     _demoMode = _store.getString(_kDemo) == 'true';
   }
@@ -21,6 +24,9 @@ class SettingsController extends ChangeNotifier {
   final KeyValueStore _store;
   /// Tests plug the fake server in here, whatever the settings say.
   final DewecsApi? apiOverride;
+
+  /// Tests plug the fake officer pages in here, whatever the settings say.
+  final OperationsApi? operationsOverride;
   final http.Client? httpClient;
   final List<Clearable> _clearables = [];
 
@@ -28,6 +34,8 @@ class SettingsController extends ChangeNotifier {
   late bool _demoMode;
   FakeDewecsApi? _fake;
   HttpDewecsApi? _http;
+  FakeOperationsApi? _fakeOps;
+  HttpOperationsApi? _httpOps;
 
   String get baseUrl => _baseUrl;
 
@@ -50,6 +58,25 @@ class SettingsController extends ChangeNotifier {
       return current;
     }
     return _http = HttpDewecsApi(baseUrl: _baseUrl, client: httpClient);
+  }
+
+  /// The fake officer pages (only meaningful in Demo mode); created on first use.
+  FakeOperationsApi get fakeOperations => _fakeOps ??= FakeOperationsApi();
+
+  /// The shelter and rescue pages of the officer dashboard for the current settings, fetched each time like [api].
+  OperationsApi get operations {
+    final override = operationsOverride;
+    if (override != null) {
+      return override;
+    }
+    if (_demoMode) {
+      return fakeOperations;
+    }
+    final current = _httpOps;
+    if (current != null && current.baseUrl == _baseUrl.trim().replaceAll(RegExp(r'/+$'), '')) {
+      return current;
+    }
+    return _httpOps = HttpOperationsApi(baseUrl: _baseUrl, client: httpClient);
   }
 
   /// An API for an address that is typed but not saved yet (the Test connection button).
@@ -82,6 +109,7 @@ class SettingsController extends ChangeNotifier {
       await clearable.clearLocalData();
     }
     _fake = null;
+    _fakeOps = null;
     _demoMode = value;
     await _store.setString(_kDemo, value.toString());
     notifyListeners();
@@ -90,16 +118,19 @@ class SettingsController extends ChangeNotifier {
   /// Wipes the fake server (Demo mode only), as if the real server database had been reset.
   void resetFakeServer() {
     fake.resetServer();
+    _fakeOps?.resetServer();
     notifyListeners();
   }
 
   void setFakeNetworkFailure(bool value) {
     fake.failNetwork = value;
+    fakeOperations.failNetwork = value;
     notifyListeners();
   }
 
   void setFakeServerError(bool value) {
     fake.failStatus = value ? 500 : null;
+    fakeOperations.failStatus = value ? 500 : null;
     notifyListeners();
   }
 }

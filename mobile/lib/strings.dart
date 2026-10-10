@@ -7,6 +7,8 @@ class S {
   // Navigation
   static const navHome = 'My reports';
   static const navNewReport = 'New report';
+  static const navShelters = 'Shelters';
+  static const navRescue = 'Rescue';
   static const navSettings = 'Settings';
 
   // Generic
@@ -192,6 +194,177 @@ class S {
   static const deleteTitle = 'Delete this report?';
   static const deleteBody = 'It has not reached the server yet and will be removed from this phone.';
   static const reportDeleted = 'Report deleted.';
+
+  // Shelters and rescue (officer operations)
+  static const shelterNoun = 'Shelter';
+  static const rescueNoun = 'Rescue';
+  static String placesTaken(int taken, int capacity) => '$taken of $capacity places taken';
+  static String placesFree(int free) => free == 1 ? '1 place free' : '$free places free';
+  static const noPlacesFree = 'No places free';
+
+  static String shelterStatusLabel(String raw) {
+    switch (raw) {
+      case 'OPEN':
+        return 'Open';
+      case 'FULL':
+        return 'Full';
+      case 'CLOSED':
+        return 'Closed';
+    }
+    return raw;
+  }
+
+  static String rescueStatusLabel(String raw) {
+    switch (raw) {
+      case 'PENDING':
+        return 'Waiting for a team';
+      case 'ASSIGNED':
+        return 'Team assigned';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'CANCELLED':
+        return 'Cancelled';
+    }
+    return raw;
+  }
+
+  static String priorityLabel(String raw) {
+    switch (raw) {
+      case 'LOW':
+        return 'Low priority';
+      case 'MODERATE':
+        return 'Moderate priority';
+      case 'HIGH':
+        return 'High priority';
+      case 'CRITICAL':
+        return 'Critical priority';
+    }
+    return raw;
+  }
+
+  static const filterStatus = 'Status';
+  static const filterPriority = 'Priority';
+  static const filterDistrict = 'District';
+  static const filterAll = 'All';
+  static const filterAllDistricts = 'All districts';
+  static const clearFilters = 'Clear filters';
+  static String sheltersCount(int n) => n == 1 ? '1 shelter' : '$n shelters';
+  static const sheltersEmptyTitle = 'No shelters yet';
+  static const sheltersEmptyBody = 'Shelters set up by the officers will appear here.';
+  static const sheltersEmptyFilteredTitle = 'No shelters match';
+  static const sheltersEmptyFilteredBody = 'Try another status or district.';
+  static const sheltersLoadFailed = 'The shelters could not be loaded.';
+  static const sheltersShowingLast = 'Offline - showing the last list received';
+
+  // Shelter detail
+  static const shelterDetailTitle = 'Shelter';
+  static const nounOccupancy = 'Occupancy';
+  static const dismiss = 'Dismiss';
+  static const shelterOrganization = 'Organization';
+  static const shelterDistrict = 'District';
+  static const shelterStatusField = 'Status';
+  static String percentFull(int percent) => '$percent% full';
+  static const closeShelter = 'Close shelter';
+  static const closeShelterTitle = 'Close this shelter?';
+  static const closeShelterBody = 'No new occupants can be checked in until it is reopened. Current occupants stay listed.';
+  static const reopenShelter = 'Reopen shelter';
+  static const checkInTitle = 'Check in a new occupant';
+  static const checkInButton = 'Check in';
+  static const occupantNameLabel = 'Full name';
+  static const occupantNicLabel = 'NIC';
+  static const occupantNameRequired = "Enter the occupant's full name";
+  static const occupantNicRequired = "Enter the occupant's NIC";
+  static const checkInClosedNote = 'This shelter is closed. Reopen it to check people in.';
+  static const checkInFullNote = 'This shelter is full. Check someone out to free a place.';
+  static const occupantsTitle = 'Current occupants';
+  static const occupantsEmpty = 'No occupants are checked in right now.';
+  static String occupantCheckedIn(String time) => 'Checked in $time';
+  static const checkOut = 'Check out';
+  static String checkOutTitle(String name) => 'Check out $name?';
+  static const checkOutBody = 'They will be removed from the list of current occupants and the place is freed.';
+  static const shelterLoadFailed = 'The shelter could not be loaded.';
+  static const actionFailed = 'The action did not work.';
+
+  // Shelter form
+  static const newShelterTitle = 'New shelter';
+  static const editShelterTitle = 'Edit shelter';
+  static const newShelterButton = 'New shelter';
+  static const editShelter = 'Edit';
+  static const createShelter = 'Create shelter';
+  static const saveChanges = 'Save changes';
+  static const selectPlaceholder = '-- select --';
+  static const owningOrganizationLabel = 'Owning organization';
+  static const shelterNameLabel = 'Name';
+  static const shelterCapacityLabel = 'Capacity';
+  static const districtSelectRequired = 'Select a district';
+  static const organizationSelectRequired = 'Select an owning organization';
+  static const shelterNameRequired = 'Enter a name';
+  static const capacityRequired = 'Enter a capacity';
+  static const capacityPositive = 'Capacity must be positive';
+  static const districtFixedHelp = 'The district is fixed after creation.';
+  static const organizationFixedHelp = 'The organization is fixed after creation.';
+  static String capacityCheckedInHelp(int n) =>
+      n == 1 ? '1 person is checked in now.' : '$n people are checked in now.';
+  static const formLoadFailed = 'The form could not be loaded.';
+  static const formCheckFields = 'Check the fields marked in red.';
+
+  // Rescue request list
+  static String rescueCount(int n) => n == 1 ? '1 rescue request' : '$n rescue requests';
+  static const rescueEmptyTitle = 'No rescue requests yet';
+  static const rescueEmptyBody = 'Requests entered by the officers will appear here.';
+  static const rescueEmptyFilteredTitle = 'No rescue requests match';
+  static const rescueEmptyFilteredBody = 'Try another status, priority or district.';
+  static const rescueLoadFailed = 'The rescue requests could not be loaded.';
+  static const rescueShowingLast = 'Offline - showing the last list received';
+
+  // Rescue request detail
+  static const rescueDetailTitle = 'Rescue request';
+  static const rescueFieldStatus = 'Status';
+  static const rescueFieldPriority = 'Priority';
+  static const rescueFieldRegion = 'Region';
+  static const rescueFieldPhone = 'Requester phone';
+  static const rescueFieldGps = 'GPS';
+  static const rescueFieldDescription = 'Description';
+  static const rescueFieldTeam = 'Assigned team';
+  static const rescueFieldSubmitted = 'Submitted at';
+  static const rescueFieldAssigned = 'Assigned at';
+  static const rescueFieldCompleted = 'Completed at';
+  static const notGiven = '—';
+  static const assignTitle = 'Assign a team';
+  static const assignTeamLabel = 'Team';
+  static const assignButton = 'Assign';
+  static const noTeamAvailable = 'No team is available right now.';
+  static const completeRequest = 'Complete';
+  static const cancelRequest = 'Cancel request';
+  static const cancelRequestTitle = 'Cancel this rescue request?';
+  static const cancelRequestBody = 'An assigned team becomes available again.';
+  static const keepRequest = 'Keep it';
+  static const rescueLoadOneFailed = 'The rescue request could not be loaded.';
+
+  // Rescue request form
+  static const newRescueTitle = 'New rescue request';
+  static const newRescueButton = 'New request';
+  static const submitRescue = 'Submit request';
+  static const priorityLabelField = 'Priority';
+  static const requesterNameLabel = 'Requester name';
+  static const requesterPhoneLabel = 'Requester phone';
+  static const gpsLatLabel = 'GPS latitude (optional)';
+  static const gpsLngLabel = 'GPS longitude (optional)';
+  static const gpsLatHelp = 'Between -90 and 90.';
+  static const gpsLngHelp = 'Between -180 and 180.';
+  static const rescueDescriptionLabel = 'Description';
+  static const requesterNameRequired = "Enter the requester's name";
+  static const requesterPhoneRequired = 'Enter a contact phone number';
+  static const rescueDescriptionRequired = 'Describe the situation';
+  static const prioritySelectRequired = 'Select a priority';
+  static const latitudeNumber = 'Latitude must be a number';
+  static const longitudeNumber = 'Longitude must be a number';
+  static const latitudeRange = 'Latitude must be between -90 and 90';
+  static const longitudeRange = 'Longitude must be between -180 and 180';
+
+  static String teamAssigned(String team) => 'Team: $team';
+  static const noTeamYet = 'No team assigned yet';
+  static const noPosition = 'No position given';
 
   // Placeholders used until a screen is built
   static const comingSoon = 'Coming soon';

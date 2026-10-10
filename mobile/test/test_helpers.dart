@@ -1,5 +1,7 @@
 import 'package:dewecs_mobile/api/dewecs_api.dart';
 import 'package:dewecs_mobile/api/fake_dewecs_api.dart';
+import 'package:dewecs_mobile/api/fake_operations_api.dart';
+import 'package:dewecs_mobile/api/operations_api.dart';
 import 'package:dewecs_mobile/main.dart';
 import 'package:dewecs_mobile/state/location_service.dart';
 import 'package:dewecs_mobile/state/photo_picker.dart';
@@ -47,13 +49,20 @@ class FakePicker implements PhotoPicker {
 
 /// Everything a widget test needs: in-memory storage, the fake server with no latency and fake device services.
 class TestApp {
-  TestApp({MemoryKeyValueStore? store, FakeDewecsApi? fake, DewecsApi? api})
-      : store = store ?? MemoryKeyValueStore(),
-        fake = fake ?? FakeDewecsApi(latency: Duration.zero) {
+  TestApp({
+    MemoryKeyValueStore? store,
+    FakeDewecsApi? fake,
+    DewecsApi? api,
+    FakeOperationsApi? operations,
+    OperationsApi? operationsApi,
+  }) : store = store ?? MemoryKeyValueStore(),
+       fake = fake ?? FakeDewecsApi(latency: Duration.zero),
+       operations = operations ?? FakeOperationsApi(latency: Duration.zero) {
     picker = FakePicker(photos);
     dependencies = AppDependencies.create(
       this.store,
       apiOverride: api ?? this.fake,
+      operationsOverride: operationsApi ?? this.operations,
       photoStore: photos,
       location: location,
       picker: picker,
@@ -67,6 +76,7 @@ class TestApp {
 
   final MemoryKeyValueStore store;
   final FakeDewecsApi fake;
+  final FakeOperationsApi operations;
   final MemoryPhotoStore photos = MemoryPhotoStore();
   final FakeLocation location = FakeLocation();
   late final FakePicker picker;

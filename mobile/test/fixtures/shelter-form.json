@@ -1,0 +1,4 @@
+{
+  "districts": [{"id": 1, "name": "Colombo"}, {"id": 2, "name": "Galle"}],
+  "organizations": [{"id": 5, "name": "Red Cross", "type": "NGO"}, {"id": 6, "name": "Disaster Management Centre", "type": "GOVERNMENT"}]
+}

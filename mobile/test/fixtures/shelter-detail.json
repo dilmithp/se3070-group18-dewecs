@@ -1,0 +1,8 @@
+{
+  "shelter": {"id": 1, "name": "Town Hall Shelter", "districtName": "Colombo", "districtId": 1, "capacity": 50,
+              "currentOccupancy": 2, "status": "OPEN", "organizationName": "Red Cross"},
+  "occupants": [
+    {"id": 11, "fullName": "Amaya Silva", "nic": "200000000101", "checkInTime": "2026-10-09T08:15:00.000"},
+    {"id": 12, "fullName": "Kasun Perera", "nic": "199012345678", "checkInTime": "2026-10-09T09:40:30.250"}
+  ]
+}
