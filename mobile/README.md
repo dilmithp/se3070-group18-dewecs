@@ -15,7 +15,13 @@ and sent when a connection exists. Sending is safe to retry, so a lost response 
 - **My reports:** waiting reports first, then the server list with status chips (Waiting for review, Reviewed by
   officers, Action taken, Not accepted, More information needed), the officers' note once action was taken, photo and
   an Open in maps button. The last list is cached, so it still shows offline.
-- **Demo mode:** a built-in demo server, so the app can be shown without a backend (Settings).
+- **Shelters:** the list of shelters with status and district filters and a bar showing how full each one is. A shelter
+  opens to its detail: check people in and out, close or reopen it, edit its name and capacity. New shelters are created
+  from the list.
+- **Rescue requests:** the list with status, priority and district filters. A request opens to its detail: assign an
+  available team while it is pending, complete it once assigned, or cancel it. New requests are entered from the list.
+- **Demo mode:** a built-in demo server, so the app can be shown without a backend (Settings). It covers the shelter and
+  rescue screens too.
 
 ## Architecture
 
@@ -27,11 +33,15 @@ lib/
   config/     theme and default server address
   models/     plain Dart classes with fromJson/toJson; contract rules; Sri Lanka time helper (pure Dart)
   api/        DewecsApi (one method per endpoint), HttpDewecsApi, DemoDewecsApi, ApiException (pure Dart)
+              OperationsApi (the officer shelter and rescue pages as JSON), HttpOperationsApi, FakeOperationsApi
   storage/    key-value store (shared_preferences), queue repository, photo store
   sync/       SyncService (the queue engine), back-off, connectivity trigger
-  state/      controllers (settings, identity, reference data, reports), device services (GPS, camera, maps)
-  screens/    home shell, My reports, report form, detail, identify, settings, sync queue (debug)
-  widgets/    status chip, report card, category chips, location and photo sections
+  state/      controllers (settings, identity, reference data, reports, shelters, rescue requests and one per
+              detail or form screen), device services (GPS, camera, maps)
+  screens/    home shell, My reports, report form, detail, identify, settings, sync queue (debug),
+              shelter list, detail and form, rescue request list, detail and form
+  widgets/    status chip, report card, category chips, location and photo sections,
+              shelter and rescue cards, badges, occupancy bar, filter bar, empty and error views
   strings.dart  every user-visible string (English only)
 tool/smoke.dart   pure-Dart check of the real HTTP layer against a running backend
 ```
@@ -43,7 +53,7 @@ flutter doctor            # Android toolchain must be green to run on an emulato
 cd mobile
 flutter pub get
 flutter analyze           # no issues
-flutter test              # 152 tests
+flutter test              # 351 tests
 ```
 
 Flutter, the Android SDK and the emulator images are large. If you keep them in one folder so they are easy to delete
@@ -71,6 +81,30 @@ $env:Path = "$dt\flutter\bin;$env:Path"; $env:PUB_CACHE = "$dt\pub-cache"; $env:
 Officers see the reports and photos at http://localhost:8080/ground-reports (local) or http://13.201.118.235:8080/ground-reports (deployed).
 
 **The deployed server is plain http.** The default address is `deployedBaseUrl` in `lib/config/app_config.dart`. Release builds refuse http except for that one IP: `android/app/src/main/res/xml/network_security_config.xml` lists it, and debug builds allow http everywhere (`src/debug/res/xml`). Settings shows an "not encrypted" warning for it. When the server gets https, change `deployedBaseUrl` and delete the `domain-config` block. An installed app keeps the address it saved before: change it in Settings or clear the app data.
+
+## Shelters and rescue requests (officer pages)
+
+The Shelters and Rescue tabs show what the officers manage on the web dashboard: `/shelters` and `/rescue-requests`.
+They use the same URLs as the web pages and ask for JSON (`Accept: application/json`; actions send a flat JSON body),
+see "Officer JSON" in `../backend/README.md`. No screen adds a rule of its own: a refusal such as "Cannot check in:
+shelter is closed." is the server's text, shown as a banner, and the screen then loads the real state again.
+
+| Screen | Server calls |
+|---|---|
+| Shelter list | `GET /shelters?status&districtId` |
+| Shelter detail | `GET /shelters/{id}`, `POST /shelters/{id}/check-in`, `/check-out/{occupantId}`, `/close`, `/reopen` |
+| Shelter form | `GET /shelters/new`, `POST /shelters`, `POST /shelters/{id}` (the district and organization are fixed after creation) |
+| Rescue list | `GET /rescue-requests?status&priority&districtId` |
+| Rescue detail | `GET /rescue-requests/{id}`, `POST .../assign` (`teamId`), `.../complete`, `.../cancel` |
+| Rescue form | `GET /rescue-requests/new`, `POST /rescue-requests` |
+
+- Unlike My reports, these tabs need no identification and work offline only as far as the last list stays on screen
+  (a failed refresh keeps it and shows a banner). Nothing is queued: an action needs a connection.
+- The lists load when their tab is first opened and again each time it is selected or a screen is closed.
+- Filters, the colours of the badges and the wording follow the web pages (`style.css` tokens), in light and dark.
+- Demo mode answers these screens too (`FakeOperationsApi`: four districts, four shelters, three teams, four rescue
+  requests, the same rules and messages as the backend services). The two failure switches and "wipe the fake server"
+  apply to it as well.
 
 ## Demo mode
 
@@ -121,7 +155,8 @@ unencrypted server, so remove it again for anything public).
 
 - **No background sync:** reports are only sent while the app is open or when it returns to the foreground. Nothing is
   sent while the app is closed (no WorkManager).
-- **No authentication:** anyone who knows a NIC can report as that citizen. After a server reset a stored citizen id may
+- **No authentication:** the officer pages the Shelters and Rescue tabs use have no login yet (see the backend
+  README), so do not expose that server beyond a trusted network. Anyone who knows a NIC can report as that citizen. After a server reset a stored citizen id may
   point to a different person; the app detects the 404 and asks to identify again, but cannot tell in other cases.
 - No map tiles (Open in maps hands over to another app or the browser), English only, no push notifications.
 - Photos are copied into the app folder and sent as JPEG, PNG or WebP up to 5 MB (the picker keeps them far below).

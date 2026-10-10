@@ -3,16 +3,21 @@ import 'package:provider/provider.dart';
 
 import '../config/theme.dart';
 import '../state/identity_controller.dart';
+import '../state/rescue_requests_controller.dart';
 import '../state/settings_controller.dart';
+import '../state/shelters_controller.dart';
 import '../strings.dart';
 import '../widgets/needs_identity.dart';
 import 'home_screen.dart';
 import 'identify_screen.dart';
 import 'new_report_screen.dart';
+import 'rescue_list_screen.dart';
 import 'settings_screen.dart';
+import 'shelter_list_screen.dart';
 import 'supply_list_screen.dart';
 
-/// Bottom navigation between My reports, New report and Settings. Home and New report need an identified citizen.
+/// Bottom navigation between My reports, New report, Shelters, Rescue and Settings. My reports and New report need an
+/// identified citizen; the shelter and rescue pages of the officers do not.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -23,6 +28,11 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  static const _sheltersTab = 2;
+  static const _rescueTab = 3;
+
+  /// The shelter and rescue lists load from the server when they are built, so they are built when first opened.
+  final Set<int> _opened = {0};
   bool _wasIdentified = false;
 
   @override
@@ -56,6 +66,21 @@ class _HomeShellState extends State<HomeShell> {
     _wasIdentified = identified;
   }
 
+  void _select(int i) {
+    final seenBefore = _opened.contains(i);
+    setState(() {
+      _index = i;
+      _opened.add(i);
+    });
+    // A list that was already built is fetched again when its tab is selected, so it never shows stale or cleared
+    // data (for example after Demo mode was switched). The first visit loads itself.
+    if (seenBefore && i == _sheltersTab) {
+      context.read<SheltersController>().refresh();
+    } else if (seenBefore && i == _rescueTab) {
+      context.read<RescueRequestsController>().refresh();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final identified = context.watch<IdentityController>().isIdentified;
@@ -67,6 +92,8 @@ class _HomeShellState extends State<HomeShell> {
     final titles = <String>[
       S.navHome,
       S.navNewReport,
+      S.navShelters,
+      S.navRescue,
       if (officerMode) S.navRelief,
       S.navSettings,
     ];
@@ -81,6 +108,8 @@ class _HomeShellState extends State<HomeShell> {
       children: [
         identified ? HomeScreen(onNewReport: () => setState(() => _index = 1)) : const NeedsIdentity(),
         identified ? NewReportScreen(onDone: () => setState(() => _index = 0)) : const NeedsIdentity(),
+        _opened.contains(_sheltersTab) ? const ShelterListScreen() : const SizedBox.shrink(),
+        _opened.contains(_rescueTab) ? const RescueListScreen() : const SizedBox.shrink(),
         if (officerMode) const SupplyListScreen(),
         const SettingsScreen(),
       ],
@@ -99,12 +128,12 @@ class _HomeShellState extends State<HomeShell> {
       body: body,
       bottomNavigationBar: NavigationBar(
         selectedIndex: safeIndex,
-        onDestinationSelected: (i) {
-          setState(() => _index = i);
-        },
+        onDestinationSelected: _select,
         destinations: [
           const NavigationDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: S.navHome),
           const NavigationDestination(icon: Icon(Icons.add_circle_outline), selectedIcon: Icon(Icons.add_circle), label: S.navNewReport),
+          const NavigationDestination(icon: Icon(Icons.night_shelter_outlined), selectedIcon: Icon(Icons.night_shelter), label: S.navShelters),
+          const NavigationDestination(icon: Icon(Icons.support_outlined), selectedIcon: Icon(Icons.support), label: S.navRescue),
           if (officerMode) const NavigationDestination(icon: Icon(Icons.inventory_2_outlined), selectedIcon: Icon(Icons.inventory_2), label: S.navRelief),
           const NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: S.navSettings),
         ],

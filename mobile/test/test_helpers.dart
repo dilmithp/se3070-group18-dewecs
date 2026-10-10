@@ -1,5 +1,7 @@
 import 'package:dewecs_mobile/api/dewecs_api.dart';
 import 'package:dewecs_mobile/api/demo_dewecs_api.dart';
+import 'package:dewecs_mobile/api/fake_operations_api.dart';
+import 'package:dewecs_mobile/api/operations_api.dart';
 import 'package:dewecs_mobile/main.dart';
 import 'package:dewecs_mobile/state/location_service.dart';
 import 'package:dewecs_mobile/state/photo_picker.dart';
@@ -47,13 +49,20 @@ class StubPicker implements PhotoPicker {
 
 /// Everything a widget test needs: in-memory storage, the demo server with no latency and stub device services.
 class TestApp {
-  TestApp({MemoryKeyValueStore? store, DemoDewecsApi? demo, DewecsApi? api})
-      : store = store ?? MemoryKeyValueStore(),
-        demo = demo ?? DemoDewecsApi(latency: Duration.zero) {
+  TestApp({
+    MemoryKeyValueStore? store,
+    DemoDewecsApi? demo,
+    DewecsApi? api,
+    FakeOperationsApi? operations,
+    OperationsApi? operationsApi,
+  }) : store = store ?? MemoryKeyValueStore(),
+       demo = demo ?? DemoDewecsApi(latency: Duration.zero),
+       operations = operations ?? FakeOperationsApi(latency: Duration.zero) {
     picker = StubPicker(photos);
     dependencies = AppDependencies.create(
       this.store,
       apiOverride: api ?? this.demo,
+      operationsOverride: operationsApi ?? this.operations,
       photoStore: photos,
       location: location,
       picker: picker,
@@ -67,6 +76,7 @@ class TestApp {
 
   final MemoryKeyValueStore store;
   final DemoDewecsApi demo;
+  final FakeOperationsApi operations;
   final MemoryPhotoStore photos = MemoryPhotoStore();
   final StubLocation location = StubLocation();
   late final StubPicker picker;
